@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="creamGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCF9F5" />
+      <stop offset="100%" stop-color="#F7EFF2" />
+    </linearGradient>
+    <linearGradient id="roseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EAA2B6" />
+      <stop offset="50%" stop-color="#D85C7B" />
+      <stop offset="100%" stop-color="#B23E5C" />
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#D85C7B" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- Background Rounded Canvas -->
+  <rect width="100" height="100" rx="24" fill="url(#creamGrad)" stroke="#E5CCD3" stroke-width="2"/>
+  
+  <!-- Monogram Z in Elegant Serif Rose Gold -->
+  <text x="50" y="68" font-family="'Playfair Display', Georgia, serif" font-size="58" font-weight="bold" fill="url(#roseGrad)" text-anchor="middle" filter="url(#softGlow)">
+    Z
+  </text>
+  
+  <!-- Subtle Rose Accent Diamond -->
+  <polygon points="50,14 54,18 50,22 46,18" fill="#D85C7B"/>
+</svg>
