@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Package,
@@ -35,13 +35,26 @@ import {
   updateProductStatusLocal,
   deleteProductLocal,
 } from '../../features/admin/adminSlice';
+import {
+  fetchAdminProducts,
+  fetchAdminCategories,
+  fetchAdminBrands,
+  fetchAdminSellers,
+} from '../../features/admin/adminThunk';
 
 export const AdminProductsPage = () => {
   const dispatch = useDispatch();
-  const products = useSelector(selectAdminProducts);
-  const categories = useSelector(selectAdminCategories);
-  const brands = useSelector(selectAdminBrands);
-  const sellers = useSelector(selectAdminSellers);
+  const products = useSelector(selectAdminProducts) || [];
+  const categories = useSelector(selectAdminCategories) || [];
+  const brands = useSelector(selectAdminBrands) || [];
+  const sellers = useSelector(selectAdminSellers) || [];
+
+  useEffect(() => {
+    dispatch(fetchAdminProducts());
+    dispatch(fetchAdminCategories());
+    dispatch(fetchAdminBrands());
+    dispatch(fetchAdminSellers());
+  }, [dispatch]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
@@ -60,20 +73,30 @@ export const AdminProductsPage = () => {
 
   const [previewProduct, setPreviewProduct] = useState(null);
 
+  const getCategoryName = (c) => (typeof c === 'object' ? (c?.name || c?.slug) : c) || '';
+  const getBrandName = (b) => (typeof b === 'object' ? (b?.name || b?.slug) : b) || '';
+  const getSellerName = (s) => (typeof s === 'object' ? (s?.storeName || s?.name || s?.email) : s) || '';
+
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
+      const pName = p.name || '';
+      const pSku = p.sku || '';
+      const pBrand = getBrandName(p.brand);
+      const pSeller = getSellerName(p.seller);
+      const pCategory = getCategoryName(p.category);
+
       const matchesSearch =
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.seller?.toLowerCase().includes(searchTerm.toLowerCase());
+        pName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pSku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pBrand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pSeller.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCat =
-        selectedCategory === 'all' || p.category === selectedCategory;
+        selectedCategory === 'all' || pCategory === selectedCategory;
       const matchesBrand =
-        selectedBrand === 'all' || p.brand === selectedBrand;
+        selectedBrand === 'all' || pBrand === selectedBrand;
       const matchesSeller =
-        selectedSeller === 'all' || p.seller === selectedSeller;
+        selectedSeller === 'all' || pSeller === selectedSeller;
       const matchesStatus =
         selectedStatus === 'all' || p.status === selectedStatus;
       const matchesStock =
@@ -95,7 +118,7 @@ export const AdminProductsPage = () => {
       if (sortBy === 'price_desc') return b.price - a.price;
       if (sortBy === 'stock_desc') return b.stock - a.stock;
       if (sortBy === 'sales_desc') return (b.salesCount || 0) - (a.salesCount || 0);
-      return (b.id || '').localeCompare(a.id || '');
+      return (b._id || b.id || '').localeCompare(a._id || a.id || '');
     });
   }, [
     products,
@@ -319,98 +342,106 @@ export const AdminProductsPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  paginatedProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-11 h-11 rounded-xl object-cover border border-slate-200 shrink-0"
-                          />
-                          <div className="min-w-0 max-w-[200px]">
-                            <p className="font-bold text-slate-900 truncate">{product.name}</p>
-                            <span className="text-[10px] font-mono text-slate-400">
-                              SKU: {product.sku}
-                            </span>
+                  paginatedProducts.map((product) => {
+                    const prodId = product._id || product.id;
+                    const prodImage = product.images?.[0]?.url || product.images?.[0] || product.thumbnail || product.image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=400&q=80';
+                    const prodSeller = getSellerName(product.seller) || 'Atelier';
+                    const prodBrand = getBrandName(product.brand) || 'Zareen';
+                    const prodCategory = getCategoryName(product.category) || 'General';
+
+                    return (
+                      <tr key={prodId} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={prodImage}
+                              alt={product.name}
+                              className="w-11 h-11 rounded-xl object-cover border border-slate-200 shrink-0"
+                            />
+                            <div className="min-w-0 max-w-[200px]">
+                              <p className="font-bold text-slate-900 truncate">{product.name}</p>
+                              <span className="text-[10px] font-mono text-slate-400">
+                                SKU: {product.sku || 'N/A'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <p className="font-semibold text-slate-800">{product.seller}</p>
-                        <p className="text-[11px] text-slate-400">{product.brand}</p>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="text-slate-700 font-medium">{product.category}</span>
-                      </td>
-                      <td className="py-3.5 px-4 font-serif font-bold text-slate-900">
-                        {formatCurrency(product.price)}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {product.stock === 0 ? (
-                          <span className="text-rose-600 font-bold text-[11px]">0 (Out)</span>
-                        ) : product.stock <= 5 ? (
-                          <span className="text-amber-700 font-bold text-[11px]">{product.stock} (Low)</span>
-                        ) : (
-                          <span className="text-slate-700 font-semibold text-[11px]">{product.stock} units</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4">{getStatusBadge(product.status)}</td>
-                      <td className="py-3.5 px-4 text-slate-400 text-[11px] whitespace-nowrap">
-                        {product.createdDate || '2025-04-12'}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => setPreviewProduct(product)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Inspect Details"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-
-                          {(product.status === 'Pending Approval' || product.status === 'Pending') && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(product.id)}
-                                className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition-colors cursor-pointer"
-                                title="Approve Catalog Item"
-                              >
-                                <CheckCircle2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleReject(product.id)}
-                                className="p-1.5 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors cursor-pointer"
-                                title="Reject Item"
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </button>
-                            </>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="font-semibold text-slate-800">{prodSeller}</p>
+                          <p className="text-[11px] text-slate-400">{prodBrand}</p>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="text-slate-700 font-medium">{prodCategory}</span>
+                        </td>
+                        <td className="py-3.5 px-4 font-serif font-bold text-slate-900">
+                          {formatCurrency(product.price)}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {product.stock === 0 ? (
+                            <span className="text-rose-600 font-bold text-[11px]">0 (Out)</span>
+                          ) : product.stock <= 5 ? (
+                            <span className="text-amber-700 font-bold text-[11px]">{product.stock} (Low)</span>
+                          ) : (
+                            <span className="text-slate-700 font-semibold text-[11px]">{product.stock} units</span>
                           )}
+                        </td>
+                        <td className="py-3.5 px-4">{getStatusBadge(product.status)}</td>
+                        <td className="py-3.5 px-4 text-slate-400 text-[11px] whitespace-nowrap">
+                          {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : (product.createdDate || 'Recent')}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setPreviewProduct(product)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Inspect Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
 
-                          <button
-                            onClick={() => handleToggleDisable(product)}
-                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                              product.status === 'Disabled'
-                                ? 'text-amber-600 hover:bg-amber-50'
-                                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
-                            }`}
-                            title={product.status === 'Disabled' ? 'Enable Product' : 'Disable Product'}
-                          >
-                            <PowerOff className="w-4 h-4" />
-                          </button>
+                            {(product.status === 'Pending Approval' || product.status === 'Pending') && (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(prodId)}
+                                  className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition-colors cursor-pointer"
+                                  title="Approve Catalog Item"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => setRejectTarget(product)}
+                                  className="p-1.5 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Reject Item"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
 
-                          <button
-                            onClick={() => setDeleteTarget(product)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                            title="Delete Product"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            <button
+                              onClick={() => handleToggleDisable(product)}
+                              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                product.status === 'Disabled'
+                                  ? 'text-amber-600 hover:bg-amber-50'
+                                  : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                              }`}
+                              title={product.status === 'Disabled' ? 'Enable Product' : 'Disable Product'}
+                            >
+                              <PowerOff className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() => setDeleteTarget(product)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete Product"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -418,68 +449,74 @@ export const AdminProductsPage = () => {
 
           {/* Mobile Responsive Cards */}
           <div className="lg:hidden divide-y divide-slate-100 p-4 space-y-4">
-            {paginatedProducts.map((product) => (
-              <div key={product.id} className="pt-3 space-y-3">
-                <div className="flex items-start gap-3">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-bold text-xs text-slate-900 leading-tight">
-                        {product.name}
+            {paginatedProducts.map((product) => {
+              const prodId = product._id || product.id;
+              const prodImage = product.images?.[0]?.url || product.images?.[0] || product.thumbnail || product.image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=400&q=80';
+              const prodSeller = getSellerName(product.seller) || 'Atelier';
+
+              return (
+                <div key={prodId} className="pt-3 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={prodImage}
+                      alt={product.name}
+                      className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-bold text-xs text-slate-900 leading-tight">
+                          {product.name}
+                        </p>
+                        {getStatusBadge(product.status)}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        {prodSeller} · <span className="font-mono">{product.sku || 'N/A'}</span>
                       </p>
-                      {getStatusBadge(product.status)}
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      {product.seller} · <span className="font-mono">{product.sku}</span>
-                    </p>
-                    <div className="flex items-center justify-between mt-2 text-xs">
-                      <span className="font-serif font-bold text-slate-900">
-                        {formatCurrency(product.price)}
-                      </span>
-                      <span className="text-slate-500">
-                        Stock: <strong>{product.stock}</strong>
-                      </span>
+                      <div className="flex items-center justify-between mt-2 text-xs">
+                        <span className="font-serif font-bold text-slate-900">
+                          {formatCurrency(product.price)}
+                        </span>
+                        <span className="text-slate-500">
+                          Stock: <strong>{product.stock}</strong>
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                  <button
-                    onClick={() => setPreviewProduct(product)}
-                    className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-1 cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> Details
-                  </button>
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      onClick={() => setPreviewProduct(product)}
+                      className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Details
+                    </button>
 
-                  <div className="flex items-center gap-1.5">
-                    {(product.status === 'Pending Approval' || product.status === 'Pending') && (
+                    <div className="flex items-center gap-1.5">
+                      {(product.status === 'Pending Approval' || product.status === 'Pending') && (
+                        <button
+                          onClick={() => handleApprove(prodId)}
+                          className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold cursor-pointer"
+                        >
+                          Approve
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleApprove(product.id)}
-                        className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold cursor-pointer"
+                        onClick={() => handleToggleDisable(product)}
+                        className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer"
                       >
-                        Approve
+                        {product.status === 'Disabled' ? 'Enable' : 'Disable'}
                       </button>
-                    )}
-                    <button
-                      onClick={() => handleToggleDisable(product)}
-                      className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer"
-                    >
-                      {product.status === 'Disabled' ? 'Enable' : 'Disable'}
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(product)}
-                      className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      <button
+                        onClick={() => setDeleteTarget(product)}
+                        className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pagination */}

@@ -35,8 +35,8 @@ export const CartPage = () => {
     emptyCart,
   } = useCart();
 
-  // Loading State Skeleton
-  if (loading) {
+  // Loading State Skeleton (only on initial load when items not yet hydrated)
+  if (loading && items.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="h-8 w-64 bg-surface-muted rounded-lg animate-pulse mb-8" />
@@ -48,26 +48,6 @@ export const CartPage = () => {
           </div>
           <div className="h-96 bg-surface-muted rounded-2xl animate-pulse" />
         </div>
-      </div>
-    );
-  }
-
-  // Error State
-  if (error) {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-20 text-center space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center mx-auto">
-          <ShoppingBag className="w-7 h-7" />
-        </div>
-        <h2 className="font-serif text-2xl font-bold text-text-main">
-          Unable to Load Shopping Bag
-        </h2>
-        <p className="text-xs text-text-muted max-w-md mx-auto">
-          {error || 'An unexpected connection issue occurred while synchronizing your bag.'}
-        </p>
-        <Button variant="primary" onClick={() => window.location.reload()} rightIcon={RefreshCw}>
-          Retry Synchronization
-        </Button>
       </div>
     );
   }
@@ -151,9 +131,9 @@ export const CartPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10">
         {/* Left 2 Cols: Seller-wise Grouped Cart Items */}
         <div className="lg:col-span-2">
-          {groupedBySeller.map((group) => (
+          {groupedBySeller.map((group, idx) => (
             <CartSellerGroup
-              key={group.seller.id || group.seller.storeName}
+              key={group.seller?.id || group.seller?.storeName || idx}
               group={group}
               onUpdateQuantity={setItemQuantity}
               onRemove={removeItem}

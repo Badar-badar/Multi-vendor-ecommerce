@@ -12,15 +12,27 @@ import StoresPage from '../pages/stores/StoresPage';
 import StoreDetailPage from '../pages/stores/StoreDetailPage';
 import CartPage from '../pages/cart/CartPage';
 import WishlistPage from '../pages/wishlist/WishlistPage';
-import AboutPage from '../pages/about/AboutPage';
-import ContactPage from '../pages/contact/ContactPage';
-import SupportPage from '../pages/support/SupportPage';
 import OrderTrackingPage from '../pages/orders/OrderTrackingPage';
 import SellerRegisterPage from '../pages/seller/SellerRegisterPage';
 import SellerApplicationStatusPage from '../pages/seller/SellerApplicationStatusPage';
 import CustomerOnboardingPage from '../pages/account/CustomerOnboardingPage';
 import UnauthorizedPage from '../pages/UnauthorizedPage';
 import ForbiddenPage from '../pages/ForbiddenPage';
+
+// Dedicated Informational & Policy Pages
+import AboutPage from '../pages/about/AboutPage';
+import PressPage from '../pages/press/PressPage';
+import AuthenticityPage from '../pages/about/AuthenticityPage';
+import SustainabilityPage from '../pages/about/SustainabilityPage';
+import ContactPage from '../pages/contact/ContactPage';
+import SupportPage from '../pages/support/SupportPage';
+import FaqPage from '../pages/support/FaqPage';
+import ShippingPolicyPage from '../pages/support/ShippingPolicyPage';
+import ReturnsPage from '../pages/support/ReturnsPage';
+import TermsPage from '../pages/legal/TermsPage';
+import PrivacyPolicyPage from '../pages/legal/PrivacyPolicyPage';
+import CookiesPolicyPage from '../pages/legal/CookiesPolicyPage';
+import SecurityPolicyPage from '../pages/legal/SecurityPolicyPage';
 
 // Checkout Page
 import CheckoutPage from '../pages/checkout/CheckoutPage';
@@ -50,22 +62,31 @@ export const UserRoutes = () => (
     <Route path="/stores" element={<StoresPage />} />
     <Route path="/stores/:slug" element={<StoreDetailPage />} />
     <Route path="/sellers" element={<StoresPage />} />
-    <Route path="/about" element={<AboutPage />} />
-    <Route path="/contact" element={<ContactPage />} />
-    <Route path="/support" element={<SupportPage />} />
-    <Route path="/orders/track" element={<OrderTrackingPage />} />
     <Route path="/cart" element={<CartPage />} />
     <Route path="/wishlist" element={<WishlistPage />} />
-    <Route path="/faq" element={<SupportPage />} />
-    <Route path="/terms" element={<SupportPage />} />
-    <Route path="/privacy" element={<SupportPage />} />
-    <Route path="/shipping-policy" element={<SupportPage />} />
-    <Route path="/authenticity" element={<AboutPage />} />
-    <Route path="/sustainability" element={<AboutPage />} />
-    <Route path="/careers" element={<AboutPage />} />
-    <Route path="/press" element={<AboutPage />} />
+    <Route path="/orders/track" element={<OrderTrackingPage />} />
+
+    {/* Dedicated Informational, Brand & Policy Pages */}
+    <Route path="/about" element={<AboutPage />} />
+    <Route path="/story" element={<AboutPage />} />
+    <Route path="/press" element={<PressPage />} />
+    <Route path="/authenticity" element={<AuthenticityPage />} />
+    <Route path="/sustainability" element={<SustainabilityPage />} />
+    <Route path="/careers" element={<Navigate to="/about" replace />} />
+    <Route path="/contact" element={<ContactPage />} />
+    <Route path="/support" element={<SupportPage />} />
+    <Route path="/faq" element={<FaqPage />} />
+    <Route path="/faqs" element={<FaqPage />} />
+    <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+    <Route path="/shipping" element={<ShippingPolicyPage />} />
+    <Route path="/returns" element={<ReturnsPage />} />
+    <Route path="/terms" element={<TermsPage />} />
+    <Route path="/terms-and-conditions" element={<TermsPage />} />
+    <Route path="/privacy" element={<PrivacyPolicyPage />} />
+    <Route path="/cookies" element={<CookiesPolicyPage />} />
+    <Route path="/security" element={<SecurityPolicyPage />} />
     <Route path="/affiliates" element={<SellerRegisterPage />} />
-    <Route path="/returns" element={<SupportPage />} />
+    <Route path="/seller/guidelines" element={<SellerRegisterPage />} />
     <Route path="/unauthorized" element={<UnauthorizedPage />} />
     <Route path="/forbidden" element={<ForbiddenPage />} />
     <Route path="/403" element={<ForbiddenPage />} />

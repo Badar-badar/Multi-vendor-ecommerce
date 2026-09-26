@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import {
@@ -31,6 +31,7 @@ import {
   clearAllNotifications,
   setFilterType,
 } from '../../features/notifications/notificationSlice';
+import { fetchNotifications } from '../../features/notifications/notificationThunk';
 import AccountLayout from '../../components/account/AccountLayout';
 import Button from '../../components/common/Button';
 
@@ -39,6 +40,10 @@ export const AccountNotificationsPage = () => {
   const notifications = useSelector(selectFilteredNotifications) || [];
   const unreadCount = useSelector(selectUnreadNotificationsCount) || 0;
   const currentFilter = useSelector(selectNotificationFilterType) || 'all';
+
+  useEffect(() => {
+    dispatch(fetchNotifications());
+  }, [dispatch]);
 
   // Channel toggles
   const [channels, setChannels] = useState({

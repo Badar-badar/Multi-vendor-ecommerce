@@ -8,7 +8,10 @@ export const CartSellerGroup = ({
   onRemove,
   onSaveToWishlist,
 }) => {
-  const { seller, items, sellerSubtotal } = group;
+  if (!group) return null;
+  const seller = group.seller || {};
+  const items = group.items || [];
+  const sellerSubtotal = group.sellerSubtotal || 0;
 
   return (
     <div className="bg-surface rounded-2xl border border-border overflow-hidden shadow-subtle mb-6">
@@ -49,9 +52,9 @@ export const CartSellerGroup = ({
 
       {/* Seller's Item List */}
       <div className="p-4 sm:p-5 space-y-3.5">
-        {items.map((item) => (
+        {items.map((item, idx) => (
           <CartItemCard
-            key={item.id}
+            key={item.id || item._id || `${item.product?.id || idx}-${item.variantKey || idx}`}
             item={item}
             onUpdateQuantity={onUpdateQuantity}
             onRemove={onRemove}

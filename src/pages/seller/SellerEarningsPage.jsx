@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useState, useMemo, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   DollarSign,
   CreditCard,
@@ -19,6 +19,7 @@ import {
   selectSellerProfile,
   selectSellerEarnings,
 } from '../../features/seller/sellerSelectors';
+import { fetchSellerEarnings, fetchSellerProfile } from '../../features/seller/sellerThunk';
 import { formatCurrency } from '../../utils/formatCurrency';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -82,8 +83,14 @@ const DEFAULT_SETTLEMENTS = [
 ];
 
 export const SellerEarningsPage = () => {
+  const dispatch = useDispatch();
   const profile = useSelector(selectSellerProfile) || {};
   const earnings = useSelector(selectSellerEarnings);
+
+  useEffect(() => {
+    dispatch(fetchSellerEarnings());
+    dispatch(fetchSellerProfile());
+  }, [dispatch]);
 
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');

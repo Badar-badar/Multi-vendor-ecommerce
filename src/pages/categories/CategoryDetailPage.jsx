@@ -113,14 +113,16 @@ export const CategoryDetailPage = () => {
   return (
     <div className="min-h-screen bg-background text-text-main pb-20">
       {/* Category Banner Hero */}
-      <section className="relative bg-primary text-white py-12 lg:py-16 overflow-hidden border-b border-border">
-        <div className="absolute inset-0 z-0 opacity-25">
+      <section className="relative bg-slate-950 text-white py-14 lg:py-20 overflow-hidden border-b border-border/80">
+        <div className="absolute inset-0 z-0">
           <img
             src={category.image}
             alt={category.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-4">
@@ -137,15 +139,15 @@ export const CategoryDetailPage = () => {
             <span className="text-accent font-semibold">{category.name}</span>
           </nav>
 
-          <div className="max-w-3xl space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-xs">
-              <Layers className="w-3.5 h-3.5 text-accent" />
+          <div className="max-w-3xl space-y-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-md border border-white/15">
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
               <span>{category.itemCount || filteredProducts.length} Exclusive Creations</span>
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white">
+            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
               {category.name}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-2xl">
+            <p className="text-xs sm:text-base text-slate-300 leading-relaxed max-w-2xl font-light">
               {category.description}
             </p>
           </div>

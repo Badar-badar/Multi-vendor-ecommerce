@@ -2,7 +2,7 @@ import { Truck, Zap, ShieldCheck, Check, ArrowLeft } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatCurrency';
 import Button from '../common/Button';
 
-export const SHIPPING_METHODS = [
+const SHIPPING_METHODS = [
   {
     id: 'standard',
     name: 'Standard Insured Courier',

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -20,9 +20,11 @@ import {
   Calendar,
   Lock,
   Clock,
+  RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { selectOrders } from '../../features/orders/orderSelectors';
+import { fetchOrderDetails } from '../../features/orders/orderThunk';
 import { cancelOrderAction } from '../../features/orders/orderSlice';
 import { addToCart } from '../../features/cart/cartSlice';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -49,36 +51,65 @@ export const OrderDetailPage = () => {
   const orders = useSelector(selectOrders) || [];
 
   // Match order by id or orderNumber
-  const order =
-    orders.find((o) => o.id === id || o.orderNumber === id) ||
-    orders[0] || {
-      id: id || 'ZR-84920',
-      orderNumber: `ZRN-${id || '84920'}-7712`,
-      createdAt: '2026-08-28',
-      status: 'Shipped',
-      trackingNumber: 'TRK-ZRN-981240-US',
-      deliveryEstimate: 'Sept 11, 2026',
-      courier: 'Sovereign White-Glove Express',
-      paymentStatus: 'Paid & Authenticated',
-      paymentMethodName: 'Stripe 256-Bit Encrypted Card',
-      shippingAddress: {
-        fullName: 'Sarah Jenkins',
-        phone: '+1 (555) 019-2834',
-        addressLine1: '740 Park Avenue, Penthouse 14B',
-        city: 'New York',
-        state: 'NY',
-        postalCode: '10021',
-        country: 'United States',
-      },
-      items: [],
-      subtotal: 0,
-      total: 0,
-    };
+  const matchedOrder = orders.find((o) => (o._id || o.id) === id || o.orderNumber === id);
+  const [fetchedOrder, setFetchedOrder] = useState(null);
+  const [loading, setLoading] = useState(!matchedOrder);
+
+  useEffect(() => {
+    if (!matchedOrder && id) {
+      let isMounted = true;
+      dispatch(fetchOrderDetails(id))
+        .unwrap()
+        .then((fetched) => {
+          if (isMounted) setFetchedOrder(fetched);
+        })
+        .catch(() => {
+          // Keep null
+        })
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [id, matchedOrder, dispatch]);
+
+  const order = matchedOrder || fetchedOrder;
 
   // Modals state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <AccountLayout>
+        <div className="space-y-6">
+          <div className="h-8 w-64 bg-surface-muted rounded-xl animate-pulse" />
+          <div className="h-48 bg-surface-muted rounded-2xl animate-pulse" />
+          <div className="h-64 bg-surface-muted rounded-2xl animate-pulse" />
+        </div>
+      </AccountLayout>
+    );
+  }
+
+  if (!order) {
+    return (
+      <AccountLayout>
+        <div className="p-12 bg-surface rounded-2xl border border-border text-center space-y-4">
+          <Package className="w-12 h-12 text-text-muted mx-auto" />
+          <h2 className="font-serif font-bold text-xl text-text-main">Order Not Found</h2>
+          <p className="text-xs text-text-muted">The requested sovereign commission could not be located in your private registry.</p>
+          <Link to="/account/orders">
+            <Button variant="primary" size="sm">
+              View All Orders
+            </Button>
+          </Link>
+        </div>
+      </AccountLayout>
+    );
+  }
 
   // Status flags
   const isDelivered = order.status === 'Delivered';

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   RotateCcw,
@@ -22,7 +22,9 @@ import Modal from '../../components/common/Modal';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { selectMyReturns } from '../../features/returns/returnSelectors';
 import { cancelLocalReturn } from '../../features/returns/returnSlice';
+import { fetchMyReturns } from '../../features/returns/returnThunk';
 import { selectOrders } from '../../features/orders/orderSelectors';
+import { fetchMyOrders } from '../../features/orders/orderThunk';
 import { formatCurrency } from '../../utils/formatCurrency';
 import ReturnRequestModal from '../../components/orders/ReturnRequestModal';
 
@@ -30,8 +32,13 @@ const STATUS_TABS = ['All', 'Under Review', 'Approved', 'Refunded', 'Cancelled']
 
 export const AccountReturnsPage = () => {
   const dispatch = useDispatch();
-  const returns = useSelector(selectMyReturns);
+  const returns = useSelector(selectMyReturns) || [];
   const orders = useSelector(selectOrders) || [];
+
+  useEffect(() => {
+    dispatch(fetchMyReturns());
+    dispatch(fetchMyOrders());
+  }, [dispatch]);
 
   const [activeTab, setActiveTab] = useState('All');
   const [selectedReturnDetail, setSelectedReturnDetail] = useState(null);

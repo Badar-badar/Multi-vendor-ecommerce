@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, ArrowRight, Layers, Package, Star } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { categories } from '../../data/categories';
+import { categories as staticCategories } from '../../data/categories';
+import { categoryApi } from '../../api';
 import { selectAllProducts } from '../../features/products/productSelectors';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -9,30 +11,64 @@ import { formatCurrency } from '../../utils/formatCurrency';
 
 export const CategoriesPage = () => {
   const allProducts = useSelector(selectAllProducts);
+  const [categoriesList, setCategoriesList] = useState(staticCategories);
+
+  useEffect(() => {
+    const fetchCats = async () => {
+      try {
+        const res = await categoryApi.getCategories();
+        const cats = res?.categories || res?.data?.categories || (Array.isArray(res) ? res : []);
+        if (cats && cats.length > 0) {
+          setCategoriesList(cats);
+        }
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+    };
+    fetchCats();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-text-main pb-20">
-      {/* Category Hero / Banner */}
-      <section className="bg-primary text-white py-14 lg:py-20 border-b border-border relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]" />
+      {/* Category Hero / Banner with High-Resolution Backdrop */}
+      <section className="relative bg-slate-950 text-white py-16 lg:py-24 border-b border-border/80 overflow-hidden">
+        {/* High-Resolution Craftsmanship Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?q=80&w=2000&auto=format&fit=crop"
+            alt="Master Craft Disciplines"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/80 to-slate-950" />
+          <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-4">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-md border border-white/15">
             <Sparkles className="w-3.5 h-3.5 text-accent" />
-            <span>Master Craft Disciplines</span>
+            <span>Master Craft Disciplines & Ateliers</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
             Curated Departments & Specialties
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed font-light">
             Explore sovereign artisan disciplines. From bespoke haute tailoring to museum-grade fine jewelry, master horology, and wheel-thrown ceramics.
           </p>
+
+          <div className="pt-2 flex items-center justify-center gap-6 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5 font-medium text-slate-200">
+              <Layers className="w-4 h-4 text-accent" /> {categoriesList.length} Sovereign Disciplines
+            </span>
+            <span>•</span>
+            <span className="font-semibold text-accent">{allProducts.length} Artisanal Creations</span>
+          </div>
         </div>
       </section>
 
       {/* Featured Department Quick Bar */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {categories.map((cat) => (
+          {categoriesList.map((cat) => (
             <Link
               key={cat.id}
               to={`/categories/${cat.slug}`}
@@ -56,14 +92,15 @@ export const CategoriesPage = () => {
 
       {/* Main Categories & Subcategories Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 space-y-12">
-        {categories.map((cat, idx) => {
+        {categoriesList.map((cat, idx) => {
+          const catId = cat._id || cat.id;
           const categoryProducts = allProducts
-            .filter((p) => p.category?.slug === cat.slug || p.category?.name === cat.name)
+            .filter((p) => p.category?.slug === cat.slug || p.category?.name === cat.name || p.category?._id === catId)
             .slice(0, 3);
 
           return (
             <div
-              key={cat.id}
+              key={catId}
               className={`grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-surface rounded-3xl border border-border p-6 sm:p-8 shadow-subtle ${
                 idx % 2 === 1 ? 'lg:flex-row-reverse' : ''
               }`}

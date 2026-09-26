@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   DollarSign,
   Package,
@@ -35,15 +35,29 @@ import {
   selectSellerOrders,
   selectSellerAnalytics,
 } from '../../features/seller/sellerSelectors';
+import {
+  fetchSellerProfile,
+  fetchSellerProducts,
+  fetchSellerOrders,
+  fetchSellerAnalytics,
+} from '../../features/seller/sellerThunk';
 import { formatCurrency } from '../../utils/formatCurrency';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 
 export const SellerDashboardPage = () => {
+  const dispatch = useDispatch();
   const profile = useSelector(selectSellerProfile) || {};
   const products = useSelector(selectSellerProducts) || [];
   const orders = useSelector(selectSellerOrders) || [];
   const analytics = useSelector(selectSellerAnalytics) || {};
+
+  useEffect(() => {
+    dispatch(fetchSellerProfile());
+    dispatch(fetchSellerProducts());
+    dispatch(fetchSellerOrders());
+    dispatch(fetchSellerAnalytics());
+  }, [dispatch]);
 
   const [timeframe, setTimeframe] = useState('7d'); // '7d' | '30d' | '3m' | '12m'
 

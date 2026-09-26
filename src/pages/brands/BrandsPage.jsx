@@ -1,31 +1,68 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Store, ArrowRight, ShieldCheck, MapPin } from 'lucide-react';
-import { brands } from '../../data/brands';
+import { brands as staticBrands } from '../../data/brands';
+import { brandApi } from '../../api';
 
 export const BrandsPage = () => {
+  const [brandsList, setBrandsList] = useState(staticBrands);
+
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const res = await brandApi.getBrands();
+        const bList = res?.brands || res?.data?.brands || (Array.isArray(res) ? res : []);
+        if (bList && bList.length > 0) {
+          setBrandsList(bList);
+        }
+      } catch (err) {
+        console.error('Failed to load brands from API:', err);
+      }
+    };
+    fetchBrands();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-text-main pb-20">
-      {/* Header Banner */}
-      <section className="bg-primary text-white py-14 lg:py-20 border-b border-border relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]" />
+      {/* Header Banner with Luxury Atelier Imagery */}
+      <section className="relative bg-slate-950 text-white py-16 lg:py-24 border-b border-border/80 overflow-hidden">
+        {/* High-Resolution Workshop Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=2000&auto=format&fit=crop"
+            alt="Master Jeweler Atelier"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/80 to-slate-950" />
+          <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-4">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-md border border-white/15">
             <Sparkles className="w-3.5 h-3.5 text-accent" />
-            <span>Verified Independent Ateliers</span>
+            <span>Verified Sovereign Maisons & Guilds</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
             The Sovereign Master Directory
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed font-light">
             Meet the sovereign craftsmen, generational jewelers, and bespoke ateliers sustaining world-class trades without industrial compromise.
           </p>
+
+          <div className="pt-2 flex items-center justify-center gap-6 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5 font-medium text-slate-200">
+              <ShieldCheck className="w-4 h-4 text-accent" /> 100% Hallmarked & Vetted
+            </span>
+            <span>•</span>
+            <span className="font-semibold text-accent">{brandsList.length} Active Maisons</span>
+          </div>
         </div>
       </section>
 
       {/* Brands Directory Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {brands.map((brand) => (
+          {brandsList.map((brand) => (
             <div
               key={brand.id}
               className="bg-surface rounded-2xl border border-border p-6 shadow-subtle hover:shadow-card hover:border-border-dark transition-all duration-300 flex flex-col justify-between group"

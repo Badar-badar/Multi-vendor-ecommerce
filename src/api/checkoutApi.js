@@ -1,21 +1,13 @@
 import api from './api';
 
 export const checkoutApi = {
-  // Validate cart & prices with backend before proceeding to payment
-  validateCheckoutSession: (cartItems, couponCode = null) =>
-    api.post('/checkout/validate', { items: cartItems, couponCode }),
+  // Validate cart, addresses, shipping & coupon with backend to calculate authoritative totals
+  validateCheckoutSession: (payload) =>
+    api.post('/checkout/validate', payload),
 
-  // Calculate authoritative shipping, taxes, and discounts based on address & shipping selection
-  calculateCheckoutTotals: (payload) =>
-    api.post('/checkout/calculate', payload),
-
-  // Pre-validate inventory across multi-seller ateliers
-  checkStockAvailability: (items) =>
-    api.post('/checkout/stock-check', { items }),
-
-  // Create authoritative confirmed order with idempotency token
+  // Place authoritative confirmed order
   createCheckoutOrder: (orderPayload, idempotencyKey) =>
-    api.post('/checkout/orders', orderPayload, {
+    api.post('/orders', { ...orderPayload, idempotencyKey }, {
       headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
     }),
 };

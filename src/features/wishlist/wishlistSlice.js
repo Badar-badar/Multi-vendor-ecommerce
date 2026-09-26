@@ -86,8 +86,23 @@ export const wishlistSlice = createSlice({
       })
       .addCase(syncWishlist.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload?.items) {
-          state.items = action.payload.items;
+        if (action.payload) {
+          const rawItems = action.payload.items || (Array.isArray(action.payload) ? action.payload : []);
+          state.items = rawItems.map((it) => ({
+            id: it._id || it.id || it.product?._id || it.product?.id,
+            name: it.name || it.product?.name,
+            slug: it.slug || it.product?.slug,
+            images: it.images || it.product?.images || [],
+            brand: it.brand || it.product?.brand,
+            category: it.category || it.product?.category,
+            price: it.price || it.product?.price || 0,
+            originalPrice: it.originalPrice || it.product?.compareAtPrice || it.price || 0,
+            rating: it.rating || it.product?.rating || 0,
+            reviewCount: it.reviewCount || it.product?.reviewCount || 0,
+            stock: it.stock ?? it.product?.stock ?? 10,
+            seller: it.seller || it.product?.seller,
+            addedAt: it.addedAt || Date.now(),
+          }));
           setStorageItem(STORAGE_KEYS.WISHLIST, state.items);
         }
       })

@@ -137,8 +137,8 @@ export const footerNavigation = {
     { name: 'Our Story', path: '/about' },
     { name: 'Artisan Community', path: '/sellers' },
     { name: 'Sustainability', path: '/sustainability' },
-    { name: 'Careers', path: '/careers' },
     { name: 'Press & Media', path: '/press' },
+    { name: 'Trust & Security', path: '/security' },
     { name: 'Terms of Service', path: '/terms' },
   ],
   partners: [

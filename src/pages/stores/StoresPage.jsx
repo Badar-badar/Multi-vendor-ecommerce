@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Store,
@@ -11,7 +11,7 @@ import {
   Package,
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { mockAdminSellers } from '../../data/adminMockData';
+import { storeApi } from '../../api';
 import { selectAllProducts } from '../../features/products/productSelectors';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -20,44 +20,81 @@ import { formatCurrency } from '../../utils/formatCurrency';
 
 export const StoresPage = () => {
   const allProducts = useSelector(selectAllProducts);
+  const [stores, setStores] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const approvedSellers = mockAdminSellers.filter(
-    (s) => s.status === 'Approved' || s.status === 'Active'
-  );
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        setLoading(true);
+        const res = await storeApi.getStores();
+        const storeList = res?.stores || res?.data?.stores || (Array.isArray(res) ? res : []);
+        setStores(storeList);
+      } catch (err) {
+        console.error('Failed to load stores:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadStores();
+  }, []);
 
   const filteredStores = useMemo(() => {
-    return approvedSellers.filter((s) => {
+    return stores.filter((s) => {
+      const storeName = s.storeName || s.name || '';
+      const ownerName = s.ownerName || s.user?.name || '';
+      const country = s.country || s.businessAddress?.country || '';
+      const category = s.category || '';
+
       const matchesSearch =
-        s.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.country?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.category?.toLowerCase().includes(searchTerm.toLowerCase());
+        storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        country.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCat =
-        selectedCategory === 'all' || s.category === selectedCategory;
+        selectedCategory === 'all' || category === selectedCategory;
 
       return matchesSearch && matchesCat;
     });
-  }, [approvedSellers, searchTerm, selectedCategory]);
+  }, [stores, searchTerm, selectedCategory]);
 
   return (
     <div className="min-h-screen bg-background text-text-main pb-20">
-      {/* Hero Banner */}
-      <section className="bg-primary text-white py-14 lg:py-20 border-b border-border relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]" />
+      {/* Hero Banner with High-Resolution Imagery */}
+      <section className="relative bg-slate-950 text-white py-16 lg:py-24 border-b border-border/80 overflow-hidden">
+        {/* High-Resolution Luxury Maison Background */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2000&auto=format&fit=crop"
+            alt="Independent Luxury Maisons"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/80 to-slate-950" />
+          <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-4">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-md border border-white/15">
             <Store className="w-3.5 h-3.5 text-accent" />
-            <span>Accredited Artisan Ateliers</span>
+            <span>Accredited Artisan Ateliers & Maisons</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
             Discover Independent Maisons
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed font-light">
             Browse our vetted collective of European master goldsmiths, Swiss horologists, French leather ateliers, and bespoke artisans.
           </p>
+
+          <div className="pt-2 flex items-center justify-center gap-6 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5 font-medium text-slate-200">
+              <ShieldCheck className="w-4 h-4 text-accent" /> Direct Atelier Dispatch
+            </span>
+            <span>•</span>
+            <span className="font-semibold text-accent">{stores.length} Verified Boutiques</span>
+          </div>
         </div>
       </section>
 

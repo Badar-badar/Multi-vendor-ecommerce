@@ -7,8 +7,8 @@ import toast from 'react-hot-toast';
 export const InvoiceModal = ({ isOpen, onClose, order }) => {
   if (!order) return null;
 
-  const invoiceNumber = `INV-${order.orderNumber?.replace('ZRN-', '') || order.id || Date.now().toString().slice(-6)}`;
-  const invoiceDate = order.createdAt || new Date().toISOString().slice(0, 10);
+  const invoiceNumber = `INV-${order.orderNumber?.replace('ZRN-', '') || (order._id || order.id || 'OFFICIAL')}`;
+  const invoiceDate = order.createdAt ? String(order.createdAt).slice(0, 10) : '2026-09-12';
 
   const handlePrint = () => {
     window.print();

@@ -6,8 +6,17 @@ import store from './app/store';
 import AppRoutes from './routes/AppRoutes';
 import useAuth from './hooks/useAuth';
 
+import { useDispatch } from 'react-redux';
+import toast from 'react-hot-toast';
+import socketService from './services/socketService';
+import { addNotification } from './features/notifications/notificationSlice';
+import { fetchUnreadNotificationCount } from './features/notifications/notificationThunk';
+import { fetchCart } from './features/cart/cartThunk';
+import { fetchWishlist } from './features/wishlist/wishlistThunk';
+
 const AuthInitializer = ({ children }) => {
-  const { loadUser, markInitialized } = useAuth();
+  const { user, isAuthenticated, loadUser, markInitialized } = useAuth();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     let isMounted = true;
@@ -31,6 +40,67 @@ const AuthInitializer = ({ children }) => {
       isMounted = false;
     };
   }, [loadUser, markInitialized]);
+
+  // Handle real-time WebSockets & initial user data when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      socketService.connect();
+
+      // Fetch initial user state
+      dispatch(fetchCart());
+      dispatch(fetchWishlist());
+      dispatch(fetchUnreadNotificationCount());
+
+      // Subscribe to real-time events
+      const unsubscribeNotif = socketService.on('notification:new', (payload) => {
+        dispatch(addNotification(payload));
+        toast(payload.title || 'New Notification', {
+          icon: '🔔',
+          style: {
+            borderRadius: '8px',
+            background: '#0F172A',
+            color: '#fff',
+            border: '1px solid #C5A880',
+          },
+        });
+      });
+
+      const unsubscribePayment = socketService.on('order:payment_updated', (payload) => {
+        toast.success(`Payment status updated for order #${payload.orderNumber || payload.orderId}`);
+      });
+
+      const unsubscribePaymentFailed = socketService.on('order:payment_failed', (payload) => {
+        toast.error(
+          `Payment failed for order #${payload.orderNumber || payload.orderId}: ${
+            payload.reason || 'Please try again.'
+          }`
+        );
+      });
+
+      const unsubscribeRefund = socketService.on('order:refund_completed', (payload) => {
+        toast.success(
+          `Refund completed for order #${payload.orderNumber || payload.orderId}.`
+        );
+      });
+
+      const unsubscribeSellerOrder = socketService.on('seller:order_paid', (payload) => {
+        toast.success(`New order received! Order #${payload.orderNumber || payload.orderId}`, {
+          icon: '💎',
+        });
+      });
+
+      return () => {
+        unsubscribeNotif?.();
+        unsubscribePayment?.();
+        unsubscribePaymentFailed?.();
+        unsubscribeRefund?.();
+        unsubscribeSellerOrder?.();
+        socketService.disconnect();
+      };
+    } else {
+      socketService.disconnect();
+    }
+  }, [isAuthenticated, user, dispatch]);
 
   return children;
 };

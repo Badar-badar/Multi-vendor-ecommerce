@@ -30,7 +30,7 @@ export const AccountDashboardPage = () => {
   const recentOrders = orders.slice(0, 3);
   const unreadNotifs = notifications.filter((n) => !n.isRead).slice(0, 3);
 
-  const patronName = user?.name || 'Sarah Jenkins';
+  const patronName = user?.name || 'Valued Patron';
 
   return (
     <AccountLayout>

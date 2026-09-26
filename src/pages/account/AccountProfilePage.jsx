@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Mail, Phone, Lock, Camera, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import useAuth from '../../hooks/useAuth';
-import { setMockUser } from '../../features/auth/authSlice';
+import authApi from '../../api/authApi';
+import { updateUserProfile } from '../../features/auth/authSlice';
 import AccountLayout from '../../components/account/AccountLayout';
 import Input from '../../components/forms/Input';
 import Button from '../../components/common/Button';
@@ -15,13 +16,23 @@ export const AccountProfilePage = () => {
   // Profile fields
   const [name, setName] = useState(user?.name || 'Sarah Jenkins');
   const [email, setEmail] = useState(user?.email || 'sarah.jenkins@example.com');
-  const [phone, setPhone] = useState('+1 (555) 019-2834');
+  const [phone, setPhone] = useState(user?.phone || '+1 (555) 019-2834');
   const [avatar, setAvatar] = useState(
     user?.avatar ||
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop'
   );
-  const [bio, setBio] = useState('Patron of high jewelry and haute horology masterworks.');
+  const [bio, setBio] = useState(user?.bio || 'Patron of high jewelry and haute horology masterworks.');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      if (user.name) setName(user.name);
+      if (user.email) setEmail(user.email);
+      if (user.avatar) setAvatar(user.avatar);
+      if (user.phone) setPhone(user.phone);
+      if (user.bio) setBio(user.bio);
+    }
+  }, [user]);
 
   // Password fields
   const [currentPassword, setCurrentPassword] = useState('');
@@ -38,35 +49,40 @@ export const AccountProfilePage = () => {
     hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
   };
 
+  const sampleAvatars = [
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=300&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=300&auto=format&fit=crop',
+  ];
+
   const handleAvatarChange = () => {
-    // Demo avatar rotation
-    const samples = [
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=300&auto=format&fit=crop',
-    ];
-    const nextIdx = (samples.indexOf(avatar) + 1) % samples.length;
-    setAvatar(samples[nextIdx]);
+    const currentIdx = sampleAvatars.indexOf(avatar);
+    const nextIdx = (currentIdx + 1) % sampleAvatars.length;
+    setAvatar(sampleAvatars[nextIdx]);
     toast.success('Avatar updated.');
   };
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsSavingProfile(true);
-    await new Promise((res) => setTimeout(res, 500));
-
-    dispatch(
-      setMockUser({
-        ...user,
+    try {
+      const res = await authApi.updateProfile({
         name: name.trim(),
-        email: email.trim(),
         avatar,
-      })
-    );
-
-    setIsSavingProfile(false);
-    toast.success('Patron profile credentials saved.');
+        bio,
+        phone: phone.trim(),
+      });
+      const updatedUser = res?.user || res?.data?.user || res?.data || res;
+      if (updatedUser) {
+        dispatch(updateUserProfile(updatedUser));
+      }
+      toast.success('Patron profile credentials saved.');
+    } catch (err) {
+      toast.error(err.message || 'Failed to update profile.');
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleSavePassword = async (e) => {
@@ -87,13 +103,21 @@ export const AccountProfilePage = () => {
     }
 
     setIsSavingPassword(true);
-    await new Promise((res) => setTimeout(res, 600));
-
-    setIsSavingPassword(false);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmNewPassword('');
-    toast.success('Password successfully updated.');
+    try {
+      await authApi.changePassword({
+        currentPassword,
+        newPassword,
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      toast.success('Security password successfully updated.');
+    } catch (err) {
+      setPasswordError(err.message || 'Failed to update password.');
+      toast.error(err.message || 'Failed to update password.');
+    } finally {
+      setIsSavingPassword(false);
+    }
   };
 
   return (

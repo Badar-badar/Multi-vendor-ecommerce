@@ -47,7 +47,7 @@ export const SellerOrderDetailPage = () => {
   const [isAssignTrackingModalOpen, setIsAssignTrackingModalOpen] = useState(false);
   const [courierName, setCourierName] = useState('Sovereign White-Glove Express');
   const [trackingNumberInput, setTrackingNumberInput] = useState(
-    order?.trackingNumber || `TRK-ZRN-${Math.floor(100000 + Math.random() * 900000)}-FR`
+    order?.trackingNumber || (order?.orderNumber ? `TRK-${order.orderNumber}` : 'TRK-ZRN-PENDING')
   );
 
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);

@@ -74,18 +74,29 @@ export const AdminReportsPage = () => {
   ];
 
   const handleExport = async () => {
+    const supportedBackgroundReports = ['sales', 'orders', 'sellers', 'payments'];
+
+    if (!supportedBackgroundReports.includes(activeDomain)) {
+      toast.error('Background generation is not available for this report yet.', {
+        id: 'export-toast',
+      });
+      return;
+    }
+
     try {
       setIsExporting(true);
       toast.loading(`Generating authoritative ${activeDomain.toUpperCase()} report...`, { id: 'export-toast' });
-      // Prepared API call
-      // await reportApi.exportReport(activeDomain, { dateRange });
-      setTimeout(() => {
-        setIsExporting(false);
-        toast.success(`${activeDomain.toUpperCase()} audit report exported (CSV).`, { id: 'export-toast' });
-      }, 800);
+      await reportApi.queueReport(activeDomain, { dateRange });
+      setIsExporting(false);
+      toast.success(
+        `${activeDomain.toUpperCase()} report started. You will be notified when it is ready.`,
+        { id: 'export-toast' }
+      );
     } catch (err) {
       setIsExporting(false);
-      toast.error('Failed to export report.', { id: 'export-toast' });
+      toast.error(err.response?.data?.message || 'Failed to start report generation.', {
+        id: 'export-toast',
+      });
     }
   };
 

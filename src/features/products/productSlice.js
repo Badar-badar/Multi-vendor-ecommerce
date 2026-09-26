@@ -1,5 +1,4 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { products as initialProducts } from '../../data/products';
 import { fetchProductDetails, fetchProducts, searchProductsThunk } from './productThunk';
 
 const initialFilters = {
@@ -8,7 +7,7 @@ const initialFilters = {
   brand: 'all',
   seller: 'all',
   minPrice: 0,
-  maxPrice: 5000,
+  maxPrice: 50000,
   rating: 0,
   inStockOnly: false,
   discountOnly: false,
@@ -20,12 +19,14 @@ const initialFilters = {
 };
 
 const initialState = {
-  items: initialProducts,
+  items: [],
   selectedProduct: null,
   filters: initialFilters,
   pagination: {
     page: 1,
     limit: 12,
+    total: 0,
+    pages: 1,
   },
   loading: false,
   error: null,
@@ -73,8 +74,11 @@ export const productSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload && action.payload.length > 0) {
-          state.items = action.payload;
+        if (action.payload) {
+          state.items = action.payload.products || (Array.isArray(action.payload) ? action.payload : []);
+          if (action.payload.pagination) {
+            state.pagination = action.payload.pagination;
+          }
         }
       })
       .addCase(fetchProducts.rejected, (state, action) => {
@@ -100,7 +104,10 @@ export const productSlice = createSlice({
       .addCase(searchProductsThunk.fulfilled, (state, action) => {
         state.loading = false;
         if (action.payload) {
-          state.items = action.payload;
+          state.items = action.payload.products || (Array.isArray(action.payload) ? action.payload : []);
+          if (action.payload.pagination) {
+            state.pagination = action.payload.pagination;
+          }
         }
       })
       .addCase(searchProductsThunk.rejected, (state, action) => {

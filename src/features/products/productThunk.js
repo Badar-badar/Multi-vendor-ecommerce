@@ -1,16 +1,18 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import productApi from '../../api/productApi';
-import { products as fallbackProducts } from '../../data/products';
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
   async (params = {}, { rejectWithValue }) => {
     try {
       const response = await productApi.getProducts(params);
-      return response.data?.products || response.data?.data || response.data || fallbackProducts;
+      const data = response.data || response;
+      return {
+        products: data.products || (Array.isArray(data) ? data : []),
+        pagination: data.pagination || { page: 1, limit: 12, total: (data.products || []).length, pages: 1 },
+      };
     } catch (error) {
-      console.info('API unavailable, loading local curated catalog:', error?.message);
-      return fallbackProducts;
+      return rejectWithValue(error.message || 'Failed to fetch catalog');
     }
   }
 );
@@ -20,13 +22,10 @@ export const fetchProductDetails = createAsyncThunk(
   async (productIdOrSlug, { rejectWithValue }) => {
     try {
       const response = await productApi.getProductByIdOrSlug(productIdOrSlug);
-      return response.data?.product || response.data?.data || response.data;
+      const data = response.data || response;
+      return data.product || data;
     } catch (error) {
-      const found = fallbackProducts.find(
-        (p) => p.id === productIdOrSlug || p.slug === productIdOrSlug
-      );
-      if (found) return found;
-      return rejectWithValue(error.response?.data?.message || 'Product not found');
+      return rejectWithValue(error.message || 'Product not found');
     }
   }
 );
@@ -36,9 +35,13 @@ export const searchProductsThunk = createAsyncThunk(
   async ({ query, params = {} }, { rejectWithValue }) => {
     try {
       const response = await productApi.searchProducts(query, params);
-      return response.data?.products || response.data?.data || response.data;
+      const data = response.data || response;
+      return {
+        products: data.products || (Array.isArray(data) ? data : []),
+        pagination: data.pagination || { page: 1, limit: 12, total: (data.products || []).length, pages: 1 },
+      };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Search failed');
+      return rejectWithValue(error.message || 'Search failed');
     }
   }
 );

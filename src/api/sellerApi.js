@@ -1,68 +1,51 @@
 import api from './api';
 
 export const sellerApi = {
-  // Authentication & Onboarding
-  registerSeller: (sellerData) => api.post('/seller/register', sellerData),
-  getApplicationStatus: () => api.get('/seller/application/status'),
-  updateApplication: (applicationData) => api.put('/seller/application', applicationData),
-  resubmitApplication: (applicationData) => api.post('/seller/application/resubmit', applicationData),
-  getProfile: () => api.get('/seller/profile'),
-  updateProfile: (profileData) => api.put('/seller/profile', profileData),
+  // Application & Onboarding
+  getApplication: () => api.get('/seller/application'),
+  applySeller: (data) => api.post('/seller/apply', data),
+  updateApplication: (data) => api.patch('/seller/application', data),
 
-  // Studio Dashboard & Telemetry
-  getDashboardMetrics: (params = {}) => api.get('/seller/dashboard', { params }),
-  getSalesTrend: (timeframe = '30d') => api.get('/seller/dashboard/sales-trend', { params: { timeframe } }),
+  // Store Profile
+  getStore: () => api.get('/seller/store'),
+  updateStore: (data) => api.patch('/seller/store', data),
 
-  // Catalog Products
+  // Products
   getProducts: (params = {}) => api.get('/seller/products', { params }),
-  getProductById: (productId) => api.get(`/seller/products/${productId}`),
-  createProduct: (productData) => api.post('/seller/products', productData),
-  updateProduct: (productId, productData) =>
-    api.put(`/seller/products/${productId}`, productData),
-  deleteProduct: (productId) => api.delete(`/seller/products/${productId}`),
+  getProductById: (id) => api.get(`/seller/products/${id}`),
+  createProduct: (data) => api.post('/seller/products', data),
+  updateProduct: (id, data) => api.patch(`/seller/products/${id}`, data),
+  deleteProduct: (id) => api.delete(`/seller/products/${id}`),
 
-  // Inventory Management
+  // Inventory
   getInventory: (params = {}) => api.get('/seller/inventory', { params }),
-  updateInventory: (productId, inventoryData) =>
-    api.put(`/seller/inventory/${productId}`, inventoryData),
+  updateStock: (productId, stockData) =>
+    api.patch(`/seller/inventory/${productId}/stock`, stockData),
 
-  // Orders & Fulfillment
-  getOrders: (params = {}) => api.get('/seller/orders', { params }),
-  getOrderDetails: (orderId) => api.get(`/seller/orders/${orderId}`),
-  updateOrderStatus: (orderId, statusData) =>
-    api.put(`/seller/orders/${orderId}/status`, statusData),
-
-  // Returns Management
-  getReturns: (params = {}) => api.get('/seller/returns', { params }),
-  updateReturnStatus: (returnId, statusData) =>
-    api.put(`/seller/returns/${returnId}/status`, statusData),
-
-  // Analytics & Reports
-  getAnalytics: (timeframe = '30d') =>
-    api.get('/seller/analytics', { params: { timeframe } }),
-  getReports: (reportType = 'sales', params = {}) =>
-    api.get('/seller/reports', { params: { type: reportType, ...params } }),
-  getEarnings: (params = {}) => api.get('/seller/earnings', { params }),
-
-  // Notifications
-  getNotifications: () => api.get('/seller/notifications'),
-  markNotificationRead: (notificationId) =>
-    api.put(`/seller/notifications/${notificationId}/read`),
-  markAllNotificationsRead: () => api.put('/seller/notifications/read-all'),
-
-  // Store Settings & Policies
-  getSettings: () => api.get('/seller/settings'),
-  updateSettings: (settingsData) => api.put('/seller/settings', settingsData),
-
-  // Coupons & Reviews
+  // Coupons
   getCoupons: () => api.get('/seller/coupons'),
-  createCoupon: (couponData) => api.post('/seller/coupons', couponData),
-  updateCoupon: (couponId, couponData) =>
-    api.put(`/seller/coupons/${couponId}`, couponData),
-  deleteCoupon: (couponId) => api.delete(`/seller/coupons/${couponId}`),
-  getReviews: (params = {}) => api.get('/seller/reviews', { params }),
-  replyToReview: (reviewId, replyText) =>
-    api.post(`/seller/reviews/${reviewId}/reply`, { replyText }),
+  createCoupon: (data) => api.post('/seller/coupons', data),
+  updateCoupon: (id, data) => api.patch(`/seller/coupons/${id}`, data),
+  deleteCoupon: (id) => api.delete(`/seller/coupons/${id}`),
+
+  // Orders & Returns
+  getOrders: (params = {}) => api.get('/seller/orders', { params }),
+  getOrderById: (id) => api.get(`/seller/orders/${id}`),
+  updateOrderStatus: (id, statusData) =>
+    api.patch(`/seller/orders/${id}/status`, statusData),
+  getReturns: (params = {}) => api.get('/seller/returns', { params }),
+  reviewReturn: (id, data) =>
+    api.patch(`/seller/returns/${id}/review`, data),
+
+  // Financial & Earnings
+  getEarnings: (params = {}) => api.get('/seller/earnings', { params }),
+  getTransactions: (params = {}) => api.get('/seller/transactions', { params }),
+
+  // Analytics
+  getAnalyticsOverview: () => api.get('/seller/analytics/overview'),
+  getAnalyticsSales: (params = {}) => api.get('/seller/analytics/sales', { params }),
+  getAnalyticsProducts: (params = {}) => api.get('/seller/analytics/products', { params }),
+  getAnalyticsCustomers: (params = {}) => api.get('/seller/analytics/customers', { params }),
 };
 
 export default sellerApi;

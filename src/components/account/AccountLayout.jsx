@@ -92,43 +92,54 @@ export const AccountLayout = ({ children }) => {
     },
   ];
 
-  const patronName = user?.name || 'Sarah Jenkins';
-  const patronEmail = user?.email || 'sarah.jenkins@example.com';
+  const patronName = user?.name || 'Valued Patron';
+  const patronEmail = user?.email || 'patron@zareen.com';
   const patronAvatar =
     user?.avatar ||
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full">
-      {/* Patron Hero Banner */}
-      <div className="bg-surface rounded-3xl border border-border p-6 sm:p-8 mb-8 shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-6 min-w-0">
-        <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+      {/* Patron Hero Banner with Luxury Atelier Backdrop */}
+      <div className="relative rounded-3xl overflow-hidden bg-slate-950 text-white border border-border/80 p-6 sm:p-8 mb-8 shadow-card flex flex-col md:flex-row md:items-center justify-between gap-6 min-w-0">
+        {/* High-Resolution Luxury Atelier Background */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=2000&auto=format&fit=crop"
+            alt="Patron Atelier"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/85 to-slate-950/60" />
+          <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
+        </div>
+
+        <div className="flex items-center gap-4 sm:gap-5 min-w-0 relative z-10">
           <div className="relative shrink-0">
             <img
               src={patronAvatar}
               alt={patronName}
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-accent shadow-xs"
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-accent shadow-md bg-slate-900"
             />
             <span
-              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center border-2 border-surface shadow-xs"
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-accent text-slate-950 flex items-center justify-center border-2 border-slate-950 shadow-xs"
               title="Sovereign Collector Tier"
             >
-              <Crown className="w-3.5 h-3.5 text-accent" />
+              <Crown className="w-3.5 h-3.5" />
             </span>
           </div>
 
           <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-serif text-xl sm:text-2xl font-bold text-text-main truncate">
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-white truncate">
                 {patronName}
               </h1>
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-accent-light text-accent px-2 py-0.5 rounded-full border border-accent/20 shrink-0">
-                <Crown className="w-3 h-3" /> VIP Sovereign Patron
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-white/10 text-accent-light px-2.5 py-0.5 rounded-full border border-white/15 backdrop-blur-md shrink-0">
+                <Crown className="w-3 h-3 text-accent" /> VIP Sovereign Patron
               </span>
             </div>
-            <p className="text-xs text-text-muted truncate">{patronEmail}</p>
-            <div className="flex items-center gap-3 text-[11px] text-text-subtle pt-1 flex-wrap">
-              <span className="flex items-center gap-1 text-emerald-600 font-medium">
+            <p className="text-xs text-slate-300 truncate">{patronEmail}</p>
+            <div className="flex items-center gap-3 text-[11px] text-slate-400 pt-1 flex-wrap">
+              <span className="flex items-center gap-1 text-emerald-400 font-medium">
                 <ShieldCheck className="w-3.5 h-3.5" /> Identity Verified
               </span>
               <span>•</span>
@@ -137,25 +148,25 @@ export const AccountLayout = ({ children }) => {
           </div>
         </div>
 
-        {/* Top Quick Stats */}
-        <div className="flex items-center gap-4 sm:gap-6 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 shrink-0">
-          <div className="text-center md:text-left">
-            <span className="text-[11px] text-text-muted block">Active Orders</span>
-            <span className="font-serif font-bold text-lg text-text-main">
+        {/* Top Quick Stats with Glassmorphic Styling and Tabular Numerals */}
+        <div className="flex items-center gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-white/15 pt-4 md:pt-0 md:pl-6 shrink-0 relative z-10">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 text-center min-w-[90px]">
+            <span className="text-[10px] uppercase tracking-wider text-slate-300 block font-semibold">Active Orders</span>
+            <span className="font-sans font-bold text-xl tabular-nums text-white">
               {orders.filter((o) => o.status !== 'Delivered' && o.status !== 'Cancelled').length}
             </span>
           </div>
 
-          <div className="text-center md:text-left">
-            <span className="text-[11px] text-text-muted block">Wishlist</span>
-            <span className="font-serif font-bold text-lg text-accent">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 text-center min-w-[90px]">
+            <span className="text-[10px] uppercase tracking-wider text-slate-300 block font-semibold">Wishlist</span>
+            <span className="font-sans font-bold text-xl tabular-nums text-accent">
               {wishlistCount}
             </span>
           </div>
 
-          <div className="text-center md:text-left">
-            <span className="text-[11px] text-text-muted block">Total Orders</span>
-            <span className="font-serif font-bold text-lg text-text-main">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-2.5 text-center min-w-[90px]">
+            <span className="text-[10px] uppercase tracking-wider text-slate-300 block font-semibold">Total Orders</span>
+            <span className="font-sans font-bold text-xl tabular-nums text-white">
               {orders.length}
             </span>
           </div>

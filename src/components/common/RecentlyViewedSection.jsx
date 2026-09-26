@@ -56,8 +56,8 @@ export const RecentlyViewedSection = ({
 
       {/* Grid of recently viewed products */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {displayItems.map((product) => (
-          <ProductCard key={product.id} product={product} />
+        {displayItems.map((product, idx) => (
+          <ProductCard key={product.id || product._id || idx} product={product} />
         ))}
       </div>
     </section>

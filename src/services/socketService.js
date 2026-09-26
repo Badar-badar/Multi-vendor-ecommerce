@@ -1,10 +1,4 @@
-/**
- * Socket.IO Integration Abstraction Layer
- *
- * Provides a decoupled event subscription interface for future real-time
- * integration (orders, notifications, payments, seller alerts) without
- * connecting or crashing when the backend socket server is offline.
- */
+import { io } from 'socket.io-client';
 
 class SocketService {
   constructor() {
@@ -14,22 +8,43 @@ class SocketService {
   }
 
   /**
-   * Connect to the backend WebSocket server (intended for future use when backend is running)
+   * Connect to the backend WebSocket server
    * @param {string} [url] - Socket server URL
    * @param {object} [options] - Connection options
    */
   connect(url = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', options = {}) {
-    // Only connect if explicitly initialized and not already connected
     if (this.socket || typeof window === 'undefined') {
       return;
     }
 
     try {
-      // Future: dynamic import or standard socket.io-client initialization
-      // this.socket = io(url, { withCredentials: true, autoConnect: true, ...options });
-      // this.bindInternalEvents();
+      this.socket = io(url, {
+        withCredentials: true,
+        autoConnect: true,
+        transports: ['websocket', 'polling'],
+        ...options,
+      });
+
+      this.socket.on('connect', () => {
+        this.isConnected = true;
+      });
+
+      this.socket.on('disconnect', () => {
+        this.isConnected = false;
+      });
+
+      this.socket.on('connect_error', () => {
+        this.isConnected = false;
+      });
+
+      // Rebind all existing registered listeners
+      this.listeners.forEach((callbacks, event) => {
+        callbacks.forEach((cb) => {
+          this.socket.on(event, cb);
+        });
+      });
     } catch (err) {
-      console.warn('[SocketService] Real-time connection deferred until backend is active:', err.message);
+      console.warn('[SocketService] Real-time connection error:', err.message);
     }
   }
 

@@ -3,20 +3,7 @@ import { MapPin, Plus, Check, Phone, User, Building, Globe } from 'lucide-react'
 import Input from '../forms/Input';
 import Checkbox from '../forms/Checkbox';
 import Button from '../common/Button';
-
-export const LUXURY_COUNTRIES = [
-  { code: 'US', name: 'United States' },
-  { code: 'FR', name: 'France' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'AE', name: 'United Arab Emirates' },
-  { code: 'MC', name: 'Monaco' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'AU', name: 'Australia' },
-];
+import { LUXURY_COUNTRIES } from '../../data/checkoutConstants';
 
 export const AddressStep = ({
   savedAddresses = [],
@@ -94,11 +81,12 @@ export const AddressStep = ({
           {!isAddingNew && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {savedAddresses.map((addr) => {
-                const isSelected = selectedAddressId === addr.id;
+                const addrId = addr._id || addr.id;
+                const isSelected = selectedAddressId === addrId;
 
                 return (
                   <div
-                    key={addr.id}
+                    key={addrId}
                     onClick={() => onSelectSavedAddress(addr)}
                     className={`p-4 rounded-xl border transition-all cursor-pointer relative ${
                       isSelected

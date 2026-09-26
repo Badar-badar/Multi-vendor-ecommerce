@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -19,6 +19,7 @@ import {
 import toast from 'react-hot-toast';
 import { selectSellerOrders } from '../../features/seller/sellerSelectors';
 import { updateOrderStatus } from '../../features/seller/sellerSlice';
+import { fetchSellerOrders } from '../../features/seller/sellerThunk';
 import { formatCurrency } from '../../utils/formatCurrency';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -37,6 +38,10 @@ const STATUS_FILTERS = [
 export const SellerOrdersPage = () => {
   const dispatch = useDispatch();
   const orders = useSelector(selectSellerOrders) || [];
+
+  useEffect(() => {
+    dispatch(fetchSellerOrders());
+  }, [dispatch]);
 
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');

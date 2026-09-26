@@ -17,7 +17,7 @@ import {
   Mail,
   ChevronRight,
 } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import {
   selectFeaturedProducts,
@@ -25,10 +25,12 @@ import {
   selectBestSellers,
   selectFlashDeals,
 } from '../../features/products/productSelectors';
-import { categories } from '../../data/categories';
+import { fetchProducts } from '../../features/products/productThunk';
+import { categories as staticCategories } from '../../data/categories';
 import { brands } from '../../data/brands';
 import { testimonials } from '../../data/testimonials';
 import { valueProps } from '../../data/valueProps';
+import { categoryApi } from '../../api';
 import ProductCard from '../../components/product/ProductCard';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -43,10 +45,28 @@ const iconMap = {
 };
 
 export const HomePage = () => {
+  const dispatch = useDispatch();
   const featuredProducts = useSelector(selectFeaturedProducts);
   const newArrivals = useSelector(selectNewArrivals);
   const bestSellers = useSelector(selectBestSellers);
   const flashDeals = useSelector(selectFlashDeals);
+  const [categoriesList, setCategoriesList] = useState(staticCategories);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+    const fetchCats = async () => {
+      try {
+        const res = await categoryApi.getCategories();
+        const cList = res?.categories || res?.data?.categories || (Array.isArray(res) ? res : []);
+        if (cList && cList.length > 0) {
+          setCategoriesList(cList);
+        }
+      } catch (err) {
+        // Safe fallback to static categories
+      }
+    };
+    fetchCats();
+  }, [dispatch]);
 
   const [activeCategoryTab, setActiveCategoryTab] = useState('all');
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -92,37 +112,108 @@ export const HomePage = () => {
       ? featuredProducts
       : featuredProducts.filter((p) => p.category?.slug === activeCategoryTab);
 
+  // Hero banner slides
+  const heroSlides = [
+    {
+      id: 'jewelry',
+      tag: 'Fine Jewelry & High Horology',
+      title: 'Where Handcrafted Distinction Meets Modern Luxury.',
+      subtitle: 'Discover bespoke apparel, rare fine jewelry, sculptural ceramics, and full-grain leather goods curated directly from independent master craftspeople worldwide.',
+      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=2000&auto=format&fit=crop',
+      badge: 'Solstice Diamonds',
+      ctaText: 'Explore Collections',
+      ctaLink: '/products?category=jewelry-watches',
+    },
+    {
+      id: 'horology',
+      tag: 'Swiss Haute Horlogerie',
+      title: 'Generational Watchmaking & Precision Calibers.',
+      subtitle: 'Independently regulated mechanical movements, hand-beveled bridges, and grand feu enamel dials from Swiss Vallée de Joux ateliers.',
+      image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=2000&auto=format&fit=crop',
+      badge: 'Certified Chronometry',
+      ctaText: 'Discover Timepieces',
+      ctaLink: '/products?category=jewelry-watches',
+    },
+    {
+      id: 'couture',
+      tag: 'Bespoke Haute Tailoring',
+      title: 'Artisanal Silks, Pure Cashmere & Bespoke Suiting.',
+      subtitle: 'Hand-sewn Milanese buttonholes, unconstructed Neapolitan tailoring, and sustainably harvested silk woven on vintage looms.',
+      image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2000&auto=format&fit=crop',
+      badge: 'Atelier Tailored',
+      ctaText: 'View Haute Couture',
+      ctaLink: '/products?category=apparel',
+    },
+    {
+      id: 'leather',
+      tag: 'Tuscan Leather Craft',
+      title: 'Saddle-Stitched Vegetable Tanned Leather Goods.',
+      subtitle: 'Full-grain saddle hides, hand-burnished edges, and solid brass hardware built to develop rich generational patinas.',
+      image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=2000&auto=format&fit=crop',
+      badge: 'Full Grain Mastery',
+      ctaText: 'Explore Leathercraft',
+      ctaLink: '/products?category=leather-goods',
+    },
+  ];
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Auto-advance hero slides every 7 seconds
+  useEffect(() => {
+    const slideInterval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 4000);
+    return () => clearInterval(slideInterval);
+  }, [heroSlides.length]);
+
   return (
     <div className="space-y-16 sm:space-y-24 pb-16">
-      {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-surface-muted/40 via-background to-background text-text-main py-16 lg:py-24 border-b border-border/70">
-        {/* Subtle Luxury Pattern Background */}
-        <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#18181B_1px,transparent_1px)] [background-size:20px_20px]" />
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-zinc-400/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+      {/* 1. HERO SECTION - CRYSTAL CLEAR LUXURY BANNER */}
+      <section className="relative overflow-hidden bg-slate-950 text-white border-b border-border/70 min-h-[560px] lg:min-h-[640px] flex items-center">
+        {/* Background Banner Slides with Transitions */}
+        {heroSlides.map((slide, index) => (
+          <div
+            key={slide.id}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              index === currentSlide ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            <img
+              src={slide.image}
+              alt={slide.title}
+              className="w-full h-full object-cover object-center transform scale-105 transition-transform duration-10000 ease-out"
+            />
+            {/* Cinematic Gradient Overlays for Razor-Sharp Text Contrast */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/30" />
+          </div>
+        ))}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        {/* Subtle Luxury Pattern Layer */}
+        <div className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none z-1" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-16 lg:py-20 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             {/* Left Content (7 cols) */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent-light text-accent border border-accent/20 text-xs font-semibold shadow-xs">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-accent-light border border-white/15 text-xs font-semibold backdrop-blur-md shadow-xs">
                 <Sparkles className="w-3.5 h-3.5 text-accent" />
-                <span>Sovereign Mastery & Verified Ateliers</span>
+                <span>{heroSlides[currentSlide].tag}</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold tracking-tight leading-[1.15] text-text-main">
-                Where Handcrafted Distinction Meets Modern Luxury.
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold tracking-tight leading-[1.12] text-white">
+                {heroSlides[currentSlide].title}
               </h1>
 
-              <p className="text-sm sm:text-base text-text-muted font-normal leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                Discover bespoke apparel, rare fine jewelry, sculptural ceramics, and full-grain leather goods curated directly from independent master craftspeople worldwide.
+              <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                {heroSlides[currentSlide].subtitle}
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                <Link to="/products">
-                  <Button variant="accent" size="lg" rightIcon={ArrowRight}>
-                    Explore Collections
+                <Link to={heroSlides[currentSlide].ctaLink}>
+                  <Button variant="accent" size="lg" rightIcon={ArrowRight} className="shadow-lg hover:shadow-accent/20">
+                    {heroSlides[currentSlide].ctaText}
                   </Button>
                 </Link>
                 <Link to="/sellers">
@@ -130,56 +221,82 @@ export const HomePage = () => {
                     variant="outline"
                     size="lg"
                     leftIcon={Compass}
-                    className="border-border hover:bg-surface-muted hover:border-text-main text-text-main"
+                    className="border-white/20 hover:bg-white/10 hover:border-white text-white backdrop-blur-xs"
                   >
                     Meet Master Artisans
                   </Button>
                 </Link>
               </div>
 
-              {/* Pillar Stats */}
-              <div className="pt-6 grid grid-cols-3 gap-4 border-t border-border/80 max-w-lg mx-auto lg:mx-0 text-left">
-                <div>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold text-accent">500+</p>
-                  <p className="text-[11px] text-text-muted font-semibold">Verified Ateliers</p>
+              {/* Slide Selector Indicators & Pillar Stats */}
+              <div className="pt-6 grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-white/15 max-w-xl mx-auto lg:mx-0">
+                {/* Slide Nav Dots */}
+                <div className="flex items-center gap-2 justify-center lg:justify-start">
+                  {heroSlides.map((slide, idx) => (
+                    <button
+                      key={slide.id}
+                      onClick={() => setCurrentSlide(idx)}
+                      className={`h-2 rounded-full transition-all cursor-pointer ${
+                        idx === currentSlide
+                          ? 'w-8 bg-accent'
+                          : 'w-2 bg-white/30 hover:bg-white/60'
+                      }`}
+                      aria-label={`Go to slide ${idx + 1}: ${slide.tag}`}
+                    />
+                  ))}
+                  <span className="text-[11px] font-semibold text-slate-400 ml-2">
+                    0{currentSlide + 1} / 0{heroSlides.length}
+                  </span>
                 </div>
-                <div>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold text-text-main">100%</p>
-                  <p className="text-[11px] text-text-muted font-semibold">Ethical Provenance</p>
-                </div>
-                <div>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold text-accent">80+</p>
-                  <p className="text-[11px] text-text-muted font-semibold">Countries Insured</p>
+
+                {/* Pillar Micro Stats */}
+                <div className="flex items-center justify-center lg:justify-start gap-5">
+                  <div>
+                    <span className="font-serif text-lg font-bold text-accent">500+</span>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Ateliers</span>
+                  </div>
+                  <div className="w-px h-6 bg-white/15" />
+                  <div>
+                    <span className="font-serif text-lg font-bold text-white">100%</span>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Ethical</span>
+                  </div>
+                  <div className="w-px h-6 bg-white/15" />
+                  <div>
+                    <span className="font-serif text-lg font-bold text-accent">80+</span>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Insured</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Hero Image Showcase (5 cols) */}
+            {/* Right Hero Spotlight Showcase (5 cols) */}
             <div className="lg:col-span-5 relative">
               <div className="relative mx-auto max-w-md lg:max-w-none">
-                <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-border shadow-elevated">
+                <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-white/15 shadow-2xl group">
                   <img
-                    src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=1000&auto=format&fit=crop"
-                    alt="Zareen Artisanal Jewelry Spotlight"
-                    className="w-full h-full object-cover object-center"
+                    src={heroSlides[currentSlide].image}
+                    alt={heroSlides[currentSlide].title}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
                   {/* Spotlight Floating Badge Card */}
-                  <div className="absolute bottom-4 inset-x-4 p-4 rounded-xl bg-surface/95 backdrop-blur-md text-text-main border border-border shadow-lg">
+                  <div className="absolute bottom-4 inset-x-4 p-4 rounded-xl bg-slate-900/90 backdrop-blur-md text-white border border-white/15 shadow-xl">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-accent">
-                          Curator’s Choice
+                      <div className="space-y-0.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-accent">
+                          <Sparkles className="w-3 h-3" /> Curator’s Spotlight
                         </span>
-                        <h4 className="font-serif text-sm font-bold text-text-main">
-                          18k Solstice Diamond Collar
+                        <h4 className="font-serif text-sm font-bold text-white line-clamp-1">
+                          {featuredProducts[0]?.name || '18k Solstice Diamond Collar'}
                         </h4>
-                        <p className="text-[11px] text-text-muted">By Aurelia Goldsmiths • Florence</p>
+                        <p className="text-[11px] text-slate-300">
+                          By {featuredProducts[0]?.brand || featuredProducts[0]?.seller?.storeName || 'Aurelia Goldsmiths • Florence'}
+                        </p>
                       </div>
-                      <Link to="/products/prod-2">
-                        <Button variant="primary" size="sm">
-                          View
+                      <Link to={featuredProducts[0] ? `/products/${featuredProducts[0].slug || featuredProducts[0].id || featuredProducts[0]._id}` : '/products'}>
+                        <Button variant="accent" size="sm" className="shrink-0 shadow-xs">
+                          Acquire
                         </Button>
                       </Link>
                     </div>
@@ -211,9 +328,9 @@ export const HomePage = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-          {categories.map((cat) => (
+          {categoriesList.map((cat) => (
             <Link
-              key={cat.id}
+              key={cat.id || cat._id}
               to={`/products?category=${cat.slug}`}
               className="group relative rounded-xl overflow-hidden aspect-[4/5] bg-surface-muted flex flex-col justify-end p-5 border border-border hover:shadow-card-hover transition-all duration-300"
             >
@@ -225,7 +342,7 @@ export const HomePage = () => {
               <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/30 to-transparent transition-opacity group-hover:opacity-90" />
               <div className="relative z-10 text-white space-y-1">
                 <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-accent-light px-2 py-0.5 rounded bg-black/40 backdrop-blur-xs">
-                  {cat.itemCount} Creations
+                  {cat.itemCount || 24} Creations
                 </span>
                 <h3 className="text-base font-serif font-bold text-white group-hover:text-accent-light transition-colors leading-snug">
                   {cat.name}
@@ -312,12 +429,12 @@ export const HomePage = () => {
             >
               All Pieces
             </button>
-            {categories.map((cat) => (
+            {categoriesList.map((cat) => (
               <button
-                key={cat.id}
-                onClick={() => setActiveCategoryTab(cat.slug)}
+                key={cat._id || cat.id || cat.slug}
+                onClick={() => setActiveCategoryTab(cat.slug || cat.name?.toLowerCase())}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
-                  activeCategoryTab === cat.slug
+                  activeCategoryTab === (cat.slug || cat.name?.toLowerCase())
                     ? 'bg-primary text-white shadow-xs'
                     : 'bg-surface-muted hover:bg-surface-hover text-text-muted'
                 }`}
@@ -449,13 +566,24 @@ export const HomePage = () => {
 
       {/* 8. EDITORIAL PROMOTIONAL BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-primary via-primary-hover to-primary-dark text-white p-8 sm:p-14 border border-border/40 shadow-2xl">
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px]" />
+        <div className="relative rounded-3xl overflow-hidden bg-slate-950 text-white p-8 sm:p-14 lg:p-16 border border-white/10 shadow-2xl">
+          {/* High-Resolution Atelier Workshop Banner Image */}
+          <div className="absolute inset-0 z-0">
+            <img
+              src="https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?q=80&w=2000&auto=format&fit=crop"
+              alt="Master Artisan Atelier Bench"
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+          </div>
+
           <div className="relative z-10 max-w-2xl space-y-4">
-            <span className="text-xs font-bold uppercase tracking-widest text-accent block">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/20 text-accent-light border border-accent/30 text-xs font-bold uppercase tracking-widest backdrop-blur-sm">
+              <Sparkles className="w-3 h-3 text-accent" />
               The Sovereign Manifesto
             </span>
-            <h3 className="text-2xl sm:text-4xl font-serif font-bold leading-tight">
+            <h3 className="text-2xl sm:text-4xl lg:text-5xl font-serif font-bold leading-tight text-white">
               Honoring Heritage Craft In An Era of Mass Production.
             </h3>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl font-light">
@@ -473,7 +601,7 @@ export const HomePage = () => {
                   variant="outline"
                   size="md"
                   leftIcon={Store}
-                  className="text-white border-white/20 hover:bg-white/10"
+                  className="text-white border-white/25 hover:bg-white/10 backdrop-blur-xs"
                 >
                   Join as an Artisan
                 </Button>

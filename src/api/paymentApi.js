@@ -2,30 +2,34 @@ import api from './api';
 
 export const paymentApi = {
   // Stripe Payment Intent Creation (Backend-Authoritative)
-  createPaymentIntent: (orderId, idempotencyKey = null) =>
+  createPaymentIntent: (payload, idempotencyKey = null) =>
     api.post(
       '/payments/create-intent',
-      { orderId },
+      typeof payload === 'string' ? { orderId: payload } : payload,
       {
         headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
       }
     ),
 
-  // Confirm / Verify Payment Intent with Stripe Webhook Sync
-  confirmPayment: (paymentIntentId) =>
-    api.post('/payments/confirm', { paymentIntentId }),
-
-  // Status Check & Transaction Verification
-  getPaymentStatus: (transactionId) =>
-    api.get(`/payments/${transactionId}/status`),
-
   // Customer Payment History Ledger
   getCustomerPayments: (params = {}) =>
-    api.get('/payments/my-history', { params }),
+    api.get('/payments', { params }),
 
-  // Admin Platform Payment Settlements
+  // Single payment details
+  getPaymentById: (id) =>
+    api.get(`/payments/${id}`),
+
+  // Admin Platform Payment Oversight
   getAdminPayments: (params = {}) =>
     api.get('/admin/payments', { params }),
+  getAdminTransactions: (params = {}) =>
+    api.get('/admin/transactions', { params }),
+  getAdminRefunds: (params = {}) =>
+    api.get('/admin/refunds', { params }),
+  processRefund: (orderId, refundData) =>
+    api.post(`/admin/orders/${orderId}/refund`, refundData),
+  getAdminCommissions: (params = {}) =>
+    api.get('/admin/commissions', { params }),
 };
 
 export default paymentApi;

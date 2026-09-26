@@ -13,7 +13,8 @@ import Button from '../common/Button';
 
 export const ProductCard = ({ product, className = '' }) => {
   const dispatch = useDispatch();
-  const isInWishlist = useSelector(selectIsInWishlist(product.id));
+  const productId = product?.id || product?._id;
+  const isInWishlist = useSelector(selectIsInWishlist(productId));
 
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -21,10 +22,14 @@ export const ProductCard = ({ product, className = '' }) => {
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
 
+  if (!product) return null;
+
   // Discount percentage calculation
+  const compareAt = Number(product.compareAtPrice) || 0;
+  const price = Number(product.price) || 0;
   const discountPercent =
-    product.compareAtPrice && product.compareAtPrice > product.price
-      ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
+    compareAt > price && price > 0
+      ? Math.round(((compareAt - price) / compareAt) * 100)
       : null;
 
   const handleWishlistToggle = (e) => {
@@ -32,9 +37,9 @@ export const ProductCard = ({ product, className = '' }) => {
     e.stopPropagation();
     dispatch(toggleWishlist(product));
     if (isInWishlist) {
-      toast.success(`Removed "${product.name}" from your wishlist.`);
+      toast.success(`Removed "${product.name || 'item'}" from your wishlist.`);
     } else {
-      toast.success(`Saved "${product.name}" to your wishlist.`);
+      toast.success(`Saved "${product.name || 'item'}" to your wishlist.`);
     }
   };
 
@@ -43,15 +48,20 @@ export const ProductCard = ({ product, className = '' }) => {
     e.stopPropagation();
     dispatch(addToCart({ product, quantity: 1, selectedVariants }));
     setIsAdded(true);
-    toast.success(`Added "${product.name}" to your cart.`);
+    toast.success(`Added "${product.name || 'item'}" to your cart.`);
     setTimeout(() => setIsAdded(false), 1800);
   };
 
   const handleModalAddToCart = () => {
     dispatch(addToCart({ product, quantity, selectedVariants }));
-    toast.success(`Added ${quantity} × "${product.name}" to your cart.`);
+    toast.success(`Added ${quantity} × "${product.name || 'item'}" to your cart.`);
     setIsQuickViewOpen(false);
   };
+
+  const productUrl = `/products/${product.slug || product.id || product._id || ''}`;
+  const firstImage = Array.isArray(product.images) && product.images.length > 0
+    ? (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.url)
+    : (product.image || 'https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=800&auto=format&fit=crop');
 
   return (
     <>
@@ -60,17 +70,17 @@ export const ProductCard = ({ product, className = '' }) => {
       >
         {/* Product Image & Badges Container */}
         <div className="relative aspect-square w-full overflow-hidden bg-surface-muted">
-          <Link to={`/products/${product.id}`} className="block w-full h-full">
+          <Link to={productUrl} className="block w-full h-full">
             <img
-              src={product.images?.[0] || 'https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=800&auto=format&fit=crop'}
-              alt={product.name}
+              src={firstImage}
+              alt={product.name || 'Product'}
               className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
               loading="lazy"
             />
             {product.images?.[1] && (
               <img
-                src={product.images[1]}
-                alt={`${product.name} alternate angle`}
+                src={typeof product.images[1] === 'string' ? product.images[1] : product.images[1]?.url}
+                alt={`${product.name || 'Product'} alternate angle`}
                 className="absolute inset-0 w-full h-full object-cover object-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out"
                 loading="lazy"
               />
@@ -184,10 +194,10 @@ export const ProductCard = ({ product, className = '' }) => {
 
             {/* Title */}
             <Link
-              to={`/products/${product.id}`}
+              to={productUrl}
               className="block font-medium text-sm text-text-main hover:text-accent transition-colors line-clamp-1 mb-1 font-serif tracking-tight"
             >
-              {product.name}
+              {product.name || 'Artisan Creation'}
             </Link>
 
             {/* Seller provenance subtitle */}

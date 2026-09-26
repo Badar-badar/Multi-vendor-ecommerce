@@ -1,10 +1,25 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Shield, Sparkles, User, Store, X } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 
 export const DevRoleSwitcher = () => {
-  const { user, role, switchRoleForDev } = useAuth();
+  const navigate = useNavigate();
+  const { role, switchRoleForDev } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleRoleSelect = (newRole) => {
+    switchRoleForDev(newRole);
+    if (newRole === 'admin') {
+      navigate('/admin/dashboard');
+    } else if (newRole === 'seller') {
+      navigate('/seller/dashboard');
+    } else if (newRole === 'customer') {
+      navigate('/profile');
+    } else {
+      navigate('/');
+    }
+  };
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -35,7 +50,7 @@ export const DevRoleSwitcher = () => {
 
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => switchRoleForDev('customer')}
+              onClick={() => handleRoleSelect('customer')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                 role === 'customer'
                   ? 'bg-primary text-white border-primary shadow-xs'
@@ -45,7 +60,7 @@ export const DevRoleSwitcher = () => {
               <User className="w-3.5 h-3.5" /> Customer
             </button>
             <button
-              onClick={() => switchRoleForDev('seller')}
+              onClick={() => handleRoleSelect('seller')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                 role === 'seller'
                   ? 'bg-primary text-white border-primary shadow-xs'
@@ -55,7 +70,7 @@ export const DevRoleSwitcher = () => {
               <Store className="w-3.5 h-3.5" /> Seller
             </button>
             <button
-              onClick={() => switchRoleForDev('admin')}
+              onClick={() => handleRoleSelect('admin')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                 role === 'admin'
                   ? 'bg-primary text-white border-primary shadow-xs'
@@ -65,7 +80,7 @@ export const DevRoleSwitcher = () => {
               <Shield className="w-3.5 h-3.5" /> Admin
             </button>
             <button
-              onClick={() => switchRoleForDev('guest')}
+              onClick={() => handleRoleSelect('guest')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                 !role
                   ? 'bg-primary text-white border-primary shadow-xs'

@@ -17,8 +17,13 @@ export const useRecentlyViewed = () => {
 
   const trackProduct = useCallback(
     (product) => {
-      if (product && product.id) {
-        dispatch(addRecentlyViewed(product));
+      if (product && (product.id || product._id)) {
+        dispatch(
+          addRecentlyViewed({
+            ...product,
+            id: product.id || product._id,
+          })
+        );
       }
     },
     [dispatch]

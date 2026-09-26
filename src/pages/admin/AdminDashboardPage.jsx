@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   DollarSign,
@@ -59,16 +59,31 @@ import {
   setTimeframe,
   updateSellerStatusLocal,
 } from '../../features/admin/adminSlice';
+import {
+  fetchAdminDashboard,
+  fetchAdminSellers,
+  fetchAdminProducts,
+  fetchAdminOrders,
+  fetchAdminRefunds,
+} from '../../features/admin/adminThunk';
 
 export const AdminDashboardPage = () => {
   const dispatch = useDispatch();
-  const metrics = useSelector(selectAdminMetrics);
+  const metrics = useSelector(selectAdminMetrics) || {};
   const activeTimeframe = useSelector(selectAdminTimeframe);
-  const sellers = useSelector(selectAdminSellers);
-  const orders = useSelector(selectAdminOrders);
-  const products = useSelector(selectAdminProducts);
-  const users = useSelector(selectAdminUsers);
-  const refunds = useSelector(selectAdminRefunds);
+  const sellers = useSelector(selectAdminSellers) || [];
+  const orders = useSelector(selectAdminOrders) || [];
+  const products = useSelector(selectAdminProducts) || [];
+  const users = useSelector(selectAdminUsers) || [];
+  const refunds = useSelector(selectAdminRefunds) || [];
+
+  useEffect(() => {
+    dispatch(fetchAdminDashboard());
+    dispatch(fetchAdminSellers());
+    dispatch(fetchAdminProducts());
+    dispatch(fetchAdminOrders());
+    dispatch(fetchAdminRefunds());
+  }, [dispatch]);
 
   const pendingSellers = useMemo(() => sellers.filter((s) => s.status === 'Pending'), [sellers]);
   const topSellers = useMemo(() => sellers.filter((s) => s.status === 'Approved').slice(0, 4), [sellers]);
@@ -85,7 +100,7 @@ export const AdminDashboardPage = () => {
     [products]
   );
 
-  const chartData = metrics.timeframeData ? metrics.timeframeData[activeTimeframe] || [] : [];
+  const chartData = metrics?.timeframeData ? metrics.timeframeData[activeTimeframe] || [] : [];
 
   const handleApproveSeller = (sellerId) => {
     dispatch(updateSellerStatusLocal({ sellerId, status: 'Approved' }));

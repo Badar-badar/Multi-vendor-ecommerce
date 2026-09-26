@@ -6,7 +6,12 @@ export const fetchProductReviews = createAsyncThunk(
   async ({ productId, params = {} }, { rejectWithValue }) => {
     try {
       const response = await reviewApi.getProductReviews(productId, params);
-      return response;
+      const data = response.data || response;
+      return {
+        reviews: data.reviews || (Array.isArray(data) ? data : []),
+        pagination: data.pagination,
+        stats: data.stats || data.ratingDistribution,
+      };
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to load reviews.');
     }
@@ -18,7 +23,8 @@ export const submitProductReview = createAsyncThunk(
   async ({ productId, reviewData }, { rejectWithValue }) => {
     try {
       const response = await reviewApi.createReview(productId, reviewData);
-      return response;
+      const data = response.data || response;
+      return data.review || data;
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to submit review.');
     }
@@ -30,7 +36,8 @@ export const editProductReview = createAsyncThunk(
   async ({ reviewId, reviewData }, { rejectWithValue }) => {
     try {
       const response = await reviewApi.updateReview(reviewId, reviewData);
-      return response;
+      const data = response.data || response;
+      return data.review || data;
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to update review.');
     }
@@ -45,42 +52,6 @@ export const removeProductReview = createAsyncThunk(
       return reviewId;
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to delete review.');
-    }
-  }
-);
-
-export const voteHelpfulReview = createAsyncThunk(
-  'reviews/voteHelpful',
-  async (reviewId, { rejectWithValue }) => {
-    try {
-      await reviewApi.voteHelpful(reviewId);
-      return reviewId;
-    } catch (error) {
-      return rejectWithValue(error.message || 'Failed to register vote.');
-    }
-  }
-);
-
-export const reportPatronReview = createAsyncThunk(
-  'reviews/reportReview',
-  async ({ reviewId, reason }, { rejectWithValue }) => {
-    try {
-      await reviewApi.reportReview(reviewId, reason);
-      return { reviewId, reason };
-    } catch (error) {
-      return rejectWithValue(error.message || 'Failed to report review.');
-    }
-  }
-);
-
-export const fetchMyReviews = createAsyncThunk(
-  'reviews/fetchMyReviews',
-  async (params = {}, { rejectWithValue }) => {
-    try {
-      const response = await reviewApi.getMyReviews(params);
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.message || 'Failed to load patron reviews.');
     }
   }
 );

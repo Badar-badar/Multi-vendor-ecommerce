@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Settings,
@@ -47,6 +47,16 @@ export const SellerSettingsPage = () => {
   const [email, setEmail] = useState(profile.email || 'jeanluc@ateliermaison.fr');
   const [phone, setPhone] = useState(profile.phone || '+33 1 42 68 55 00');
   const [timezone, setTimezone] = useState('Europe/Paris (UTC+01:00)');
+
+  useEffect(() => {
+    if (profile && Object.keys(profile).length > 0) {
+      if (profile.storeName) setStoreName(profile.storeName);
+      if (profile.ownerName) setOwnerName(profile.ownerName);
+      if (profile.email) setEmail(profile.email);
+      if (profile.phone) setPhone(profile.phone);
+      if (profile.description) setStoreBio(profile.description);
+    }
+  }, [profile]);
 
   // Notifications
   const [notifyOrders, setNotifyOrders] = useState(true);

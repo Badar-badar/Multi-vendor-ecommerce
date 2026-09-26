@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -20,6 +20,7 @@ import {
 import toast from 'react-hot-toast';
 import { selectSellerProducts } from '../../features/seller/sellerSelectors';
 import { deleteProduct, updateProduct, updateInventoryStock } from '../../features/seller/sellerSlice';
+import { fetchSellerProducts } from '../../features/seller/sellerThunk';
 import { formatCurrency } from '../../utils/formatCurrency';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -28,6 +29,10 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 export const SellerProductsPage = () => {
   const dispatch = useDispatch();
   const products = useSelector(selectSellerProducts) || [];
+
+  useEffect(() => {
+    dispatch(fetchSellerProducts());
+  }, [dispatch]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All'); // 'All' | 'Active' | 'Draft' | 'Low Stock' | 'Out of Stock'
@@ -43,7 +48,11 @@ export const SellerProductsPage = () => {
 
   // Unique categories in seller's catalog
   const availableCategories = useMemo(() => {
-    const cats = new Set(products.map((p) => p.category).filter(Boolean));
+    const cats = new Set(
+      products
+        .map((p) => (typeof p.category === 'object' ? p.category?.name : p.category))
+        .filter(Boolean)
+    );
     return ['All', ...Array.from(cats)];
   }, [products]);
 
@@ -61,14 +70,17 @@ export const SellerProductsPage = () => {
           (statusFilter === 'Low Stock' && isLowStock) ||
           (statusFilter === 'Out of Stock' && isOutOfStock);
 
+        const catName = typeof prod.category === 'object' ? prod.category?.name : prod.category;
+        const brandName = typeof prod.brand === 'object' ? prod.brand?.name : prod.brand;
+
         const matchesCategory =
-          categoryFilter === 'All' || prod.category?.toLowerCase() === categoryFilter.toLowerCase();
+          categoryFilter === 'All' || catName?.toLowerCase() === categoryFilter.toLowerCase();
 
         const matchesSearch =
           !searchQuery.trim() ||
           prod.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           prod.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          prod.brand?.toLowerCase().includes(searchQuery.toLowerCase());
+          brandName?.toLowerCase().includes(searchQuery.toLowerCase());
 
         return matchesStatus && matchesCategory && matchesSearch;
       })
@@ -78,7 +90,7 @@ export const SellerProductsPage = () => {
         if (sortBy === 'sales') return (b.salesCount || 0) - (a.salesCount || 0);
         if (sortBy === 'stock') return a.stock - b.stock;
         // Default newest / id
-        return (b.id || '').localeCompare(a.id || '');
+        return (b._id || b.id || '').localeCompare(a._id || a.id || '');
       });
   }, [products, statusFilter, categoryFilter, searchQuery, sortBy]);
 

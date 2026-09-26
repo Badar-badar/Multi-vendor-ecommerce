@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShoppingCart,
@@ -14,16 +14,23 @@ import {
   Calendar,
   ExternalLink,
 } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Input from '../../components/common/Input';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { selectAdminOrders, selectAdminSellers } from '../../features/admin/adminSelectors';
+import { fetchAdminOrders, fetchAdminSellers } from '../../features/admin/adminThunk';
 
 export const AdminOrdersPage = () => {
-  const orders = useSelector(selectAdminOrders);
-  const sellers = useSelector(selectAdminSellers);
+  const dispatch = useDispatch();
+  const orders = useSelector(selectAdminOrders) || [];
+  const sellers = useSelector(selectAdminSellers) || [];
+
+  useEffect(() => {
+    dispatch(fetchAdminOrders());
+    dispatch(fetchAdminSellers());
+  }, [dispatch]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');

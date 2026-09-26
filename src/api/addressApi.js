@@ -2,17 +2,15 @@ import api from './api';
 
 export const addressApi = {
   getAddresses: () =>
-    api.get('/addresses'),
+    api.get('/users/me/addresses'),
   createAddress: (addressData) =>
-    api.post('/addresses', addressData),
+    api.post('/users/me/addresses', addressData),
   updateAddress: (id, addressData) =>
-    api.put(`/addresses/${id}`, addressData),
+    api.patch(`/users/me/addresses/${id}`, addressData),
   deleteAddress: (id) =>
-    api.delete(`/addresses/${id}`),
-  setDefaultShipping: (id) =>
-    api.put(`/addresses/${id}/default-shipping`),
-  setDefaultBilling: (id) =>
-    api.put(`/addresses/${id}/default-billing`),
+    api.delete(`/users/me/addresses/${id}`),
+  setDefaultAddress: (id) =>
+    api.patch(`/users/me/addresses/${id}/default`),
 };
 
 export default addressApi;

@@ -6,7 +6,7 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await authApi.login(credentials);
-      return response; // response contains { user, message }
+      return response.data?.user || response.user || response;
     } catch (error) {
       return rejectWithValue(error.message || 'Authentication failed');
     }
@@ -18,21 +18,9 @@ export const registerUser = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const response = await authApi.register(userData);
-      return response;
+      return response.data?.user || response.user || response;
     } catch (error) {
       return rejectWithValue(error.message || 'Registration failed');
-    }
-  }
-);
-
-export const googleAuthUser = createAsyncThunk(
-  'auth/google',
-  async (credentialData, { rejectWithValue }) => {
-    try {
-      const response = await authApi.googleAuth(credentialData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.message || 'Google authentication failed');
     }
   }
 );
@@ -42,7 +30,7 @@ export const fetchCurrentUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await authApi.getCurrentUser();
-      return response.user;
+      return response.data?.user || response.user;
     } catch (error) {
       return rejectWithValue(error.message || 'Session expired or unauthenticated');
     }
@@ -81,6 +69,30 @@ export const resetPasswordUser = createAsyncThunk(
       return response;
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to reset password');
+    }
+  }
+);
+
+export const updateProfileUser = createAsyncThunk(
+  'auth/updateProfile',
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const response = await authApi.updateProfile(profileData);
+      return response.data?.user || response.user;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to update profile');
+    }
+  }
+);
+
+export const googleAuthUser = createAsyncThunk(
+  'auth/googleAuth',
+  async (credentialData, { rejectWithValue }) => {
+    try {
+      const response = await authApi.googleAuth?.(credentialData);
+      return response?.data?.user || response?.user || response;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Google authentication failed');
     }
   }
 );

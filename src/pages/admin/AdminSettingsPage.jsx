@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Settings,
   Shield,
@@ -23,11 +23,17 @@ import { settingsApi } from '../../api';
 
 export const AdminSettingsPage = () => {
   const dispatch = useDispatch();
-  const settings = useSelector(selectAdminSettings);
+  const settings = useSelector(selectAdminSettings) || {};
 
   const [activeSection, setActiveSection] = useState('general');
   const [formData, setFormData] = useState(settings);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (settings && Object.keys(settings).length > 0) {
+      setFormData(settings);
+    }
+  }, [settings]);
 
   const handleSave = async (e) => {
     e.preventDefault();

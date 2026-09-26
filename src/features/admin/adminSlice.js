@@ -1,57 +1,36 @@
 import { createSlice } from '@reduxjs/toolkit';
 import {
-  mockAdminMetrics,
-  mockAdminUsers,
-  mockAdminSellers,
-  mockAdminProducts,
-  mockAdminCategories,
-  mockAdminSubcategories,
-  mockAdminBrands,
-  mockAdminOrders,
-  mockAdminPayments,
-  mockAdminRefunds,
-  mockAdminCommissions,
-  mockAdminReviews,
-  mockAdminCoupons,
-  mockAdminPromotions,
-  mockAdminNotifications,
-  mockAdminAuditLogs,
-  mockAdminSettings,
-} from '../../data/adminMockData';
-import {
   fetchAdminDashboard,
-  fetchAdminUsers,
   fetchAdminSellers,
   fetchAdminProducts,
   fetchAdminCategories,
+  fetchAdminSubcategories,
+  fetchAdminBrands,
   fetchAdminOrders,
   fetchAdminPayments,
+  fetchAdminRefunds,
   fetchAdminCommissions,
   fetchAdminReviews,
   fetchAdminCoupons,
-  fetchAdminAuditLogs,
   fetchAdminSettings,
 } from './adminThunk';
 
 const initialState = {
-  metrics: mockAdminMetrics,
-  timeframe: '6m',
-  users: mockAdminUsers,
-  sellers: mockAdminSellers,
-  products: mockAdminProducts,
-  categories: mockAdminCategories,
-  subcategories: mockAdminSubcategories,
-  brands: mockAdminBrands,
-  orders: mockAdminOrders,
-  payments: mockAdminPayments,
-  refunds: mockAdminRefunds,
-  commissions: mockAdminCommissions,
-  reviews: mockAdminReviews,
-  coupons: mockAdminCoupons,
-  promotions: mockAdminPromotions,
-  notifications: mockAdminNotifications,
-  auditLogs: mockAdminAuditLogs,
-  settings: mockAdminSettings,
+  metrics: null,
+  timeframe: '30d',
+  sellers: [],
+  users: [],
+  products: [],
+  categories: [],
+  subcategories: [],
+  brands: [],
+  orders: [],
+  payments: [],
+  refunds: [],
+  commissions: [],
+  reviews: [],
+  coupons: [],
+  settings: null,
   loading: false,
   error: null,
 };
@@ -63,120 +42,114 @@ const adminSlice = createSlice({
     setTimeframe: (state, action) => {
       state.timeframe = action.payload;
     },
-    updateUserStatusLocal: (state, action) => {
-      const { userId, status } = action.payload;
-      const user = state.users.find((u) => u.id === userId);
-      if (user) user.status = status;
-    },
     updateSellerStatusLocal: (state, action) => {
       const { sellerId, status } = action.payload;
-      const seller = state.sellers.find((s) => s.id === sellerId);
+      const seller = state.sellers.find((s) => (s._id || s.id) === sellerId);
       if (seller) {
         seller.status = status;
-        if (status === 'Approved') seller.approvedDate = new Date().toISOString().slice(0, 10);
       }
     },
     updateProductStatusLocal: (state, action) => {
       const { productId, status } = action.payload;
-      const product = state.products.find((p) => p.id === productId);
+      const product = state.products.find((p) => (p._id || p.id) === productId);
       if (product) product.status = status;
     },
     deleteProductLocal: (state, action) => {
-      state.products = state.products.filter((p) => p.id !== action.payload);
+      state.products = state.products.filter((p) => (p._id || p.id) !== action.payload);
     },
     addCategoryLocal: (state, action) => {
       state.categories.unshift(action.payload);
     },
     updateCategoryLocal: (state, action) => {
-      const idx = state.categories.findIndex((c) => c.id === action.payload.id);
+      const idx = state.categories.findIndex((c) => (c._id || c.id) === (action.payload._id || action.payload.id));
       if (idx !== -1) state.categories[idx] = { ...state.categories[idx], ...action.payload };
     },
     deleteCategoryLocal: (state, action) => {
-      state.categories = state.categories.filter((c) => c.id !== action.payload);
+      state.categories = state.categories.filter((c) => (c._id || c.id) !== action.payload);
     },
     addSubcategoryLocal: (state, action) => {
       state.subcategories.unshift(action.payload);
     },
     updateSubcategoryLocal: (state, action) => {
-      const idx = state.subcategories.findIndex((s) => s.id === action.payload.id);
+      const idx = state.subcategories.findIndex((s) => (s._id || s.id) === (action.payload._id || action.payload.id));
       if (idx !== -1) state.subcategories[idx] = { ...state.subcategories[idx], ...action.payload };
     },
     deleteSubcategoryLocal: (state, action) => {
-      state.subcategories = state.subcategories.filter((s) => s.id !== action.payload);
+      state.subcategories = state.subcategories.filter((s) => (s._id || s.id) !== action.payload);
     },
     addBrandLocal: (state, action) => {
       state.brands.unshift(action.payload);
     },
     updateBrandLocal: (state, action) => {
-      const idx = state.brands.findIndex((b) => b.id === action.payload.id);
+      const idx = state.brands.findIndex((b) => (b._id || b.id) === (action.payload._id || action.payload.id));
       if (idx !== -1) state.brands[idx] = { ...state.brands[idx], ...action.payload };
     },
     deleteBrandLocal: (state, action) => {
-      state.brands = state.brands.filter((b) => b.id !== action.payload);
+      state.brands = state.brands.filter((b) => (b._id || b.id) !== action.payload);
     },
     updateOrderStatusLocal: (state, action) => {
-      const { orderId, fulfillmentStatus, paymentStatus } = action.payload;
-      const order = state.orders.find((o) => o.id === orderId);
-      if (order) {
-        if (fulfillmentStatus) order.fulfillmentStatus = fulfillmentStatus;
-        if (paymentStatus) order.paymentStatus = paymentStatus;
-      }
+      const { orderId, status } = action.payload;
+      const order = state.orders.find((o) => (o._id || o.id) === orderId);
+      if (order) order.status = status;
     },
-    updateRefundStatusLocal: (state, action) => {
-      const { refundId, status } = action.payload;
-      const ref = state.refunds.find((r) => r.id === refundId);
-      if (ref) ref.status = status;
-    },
-    updateCommissionRateLocal: (state, action) => {
-      const { sellerId, rate } = action.payload;
-      const com = state.commissions.find((c) => c.sellerId === sellerId);
-      if (com) com.commissionRate = rate;
-      const seller = state.sellers.find((s) => s.id === sellerId);
-      if (seller) seller.commissionRate = rate;
-    },
-    moderateReviewLocal: (state, action) => {
-      const { reviewId, status } = action.payload;
-      const rev = state.reviews.find((r) => r.id === reviewId);
-      if (rev) rev.status = status;
+    deleteReviewLocal: (state, action) => {
+      state.reviews = state.reviews.filter((r) => (r._id || r.id) !== action.payload);
     },
     addCouponLocal: (state, action) => {
       state.coupons.unshift(action.payload);
     },
+    toggleCouponStatusLocal: (state, action) => {
+      const coupon = state.coupons.find((c) => (c._id || c.id) === action.payload);
+      if (coupon) coupon.isActive = !coupon.isActive;
+    },
+    updateCommissionRateLocal: (state, action) => {
+      const { sellerId, commissionRate } = action.payload;
+      const seller = state.sellers.find((s) => (s._id || s.id) === sellerId);
+      if (seller) seller.commissionRate = commissionRate;
+    },
+    updateUserStatusLocal: (state, action) => {
+      const { userId, status, isBlocked, role } = action.payload;
+      const user = state.users?.find((u) => (u._id || u.id) === userId);
+      if (user) {
+        if (status !== undefined) user.status = status;
+        if (isBlocked !== undefined) user.isBlocked = isBlocked;
+        if (role !== undefined) user.role = role;
+      }
+    },
+    moderateReviewLocal: (state, action) => {
+      const { reviewId, status } = action.payload;
+      const rev = state.reviews.find((r) => (r._id || r.id) === reviewId);
+      if (rev) rev.status = status;
+    },
     updateCouponLocal: (state, action) => {
-      const idx = state.coupons.findIndex((c) => c.id === action.payload.id);
+      const idx = state.coupons.findIndex((c) => (c._id || c.id) === (action.payload._id || action.payload.id));
       if (idx !== -1) state.coupons[idx] = { ...state.coupons[idx], ...action.payload };
     },
-    deleteCouponLocal: (state, action) => {
-      state.coupons = state.coupons.filter((c) => c.id !== action.payload);
-    },
     addPromotionLocal: (state, action) => {
+      if (!state.promotions) state.promotions = [];
       state.promotions.unshift(action.payload);
     },
     updatePromotionLocal: (state, action) => {
-      const idx = state.promotions.findIndex((p) => p.id === action.payload.id);
+      if (!state.promotions) state.promotions = [];
+      const idx = state.promotions.findIndex((p) => (p._id || p.id) === (action.payload._id || action.payload.id));
       if (idx !== -1) state.promotions[idx] = { ...state.promotions[idx], ...action.payload };
     },
-    deletePromotionLocal: (state, action) => {
-      state.promotions = state.promotions.filter((p) => p.id !== action.payload);
-    },
-    markNotificationReadLocal: (state, action) => {
-      const notif = state.notifications.find((n) => n.id === action.payload);
-      if (notif) notif.unread = false;
-    },
-    markAllNotificationsReadLocal: (state) => {
-      state.notifications.forEach((n) => {
-        n.unread = false;
-      });
+    updateRefundStatusLocal: (state, action) => {
+      const { refundId, status } = action.payload;
+      const ref = state.refunds.find((r) => (r._id || r.id) === refundId);
+      if (ref) ref.status = status;
     },
     updateSettingsLocal: (state, action) => {
       state.settings = { ...state.settings, ...action.payload };
     },
-    addAuditLogLocal: (state, action) => {
-      state.auditLogs.unshift({
-        id: `LOG-${Date.now().toString().slice(-4)}`,
-        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
-        ...action.payload,
-      });
+    markNotificationReadLocal: (state, action) => {
+      // Local notification helper
+    },
+    markAllNotificationsReadLocal: (state) => {
+      // Local notification helper
+    },
+    clearAdminError: (state) => {
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -184,65 +157,93 @@ const adminSlice = createSlice({
       // Dashboard
       .addCase(fetchAdminDashboard.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchAdminDashboard.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload) state.metrics = action.payload;
+        state.metrics = action.payload;
       })
       .addCase(fetchAdminDashboard.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Users
-      .addCase(fetchAdminUsers.fulfilled, (state, action) => {
-        if (action.payload) state.users = action.payload;
-      })
+
       // Sellers
+      .addCase(fetchAdminSellers.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(fetchAdminSellers.fulfilled, (state, action) => {
-        if (action.payload) state.sellers = action.payload;
+        state.loading = false;
+        state.sellers = Array.isArray(action.payload) ? action.payload : [];
       })
+      .addCase(fetchAdminSellers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
       // Products
+      .addCase(fetchAdminProducts.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(fetchAdminProducts.fulfilled, (state, action) => {
-        if (action.payload) state.products = action.payload;
+        state.loading = false;
+        state.products = Array.isArray(action.payload) ? action.payload : [];
       })
-      // Categories
+      .addCase(fetchAdminProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Taxonomy
       .addCase(fetchAdminCategories.fulfilled, (state, action) => {
-        if (action.payload) state.categories = action.payload;
+        state.categories = Array.isArray(action.payload) ? action.payload : [];
       })
+      .addCase(fetchAdminSubcategories.fulfilled, (state, action) => {
+        state.subcategories = Array.isArray(action.payload) ? action.payload : [];
+      })
+      .addCase(fetchAdminBrands.fulfilled, (state, action) => {
+        state.brands = Array.isArray(action.payload) ? action.payload : [];
+      })
+
       // Orders
+      .addCase(fetchAdminOrders.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(fetchAdminOrders.fulfilled, (state, action) => {
-        if (action.payload) state.orders = action.payload;
+        state.loading = false;
+        state.orders = Array.isArray(action.payload) ? action.payload : [];
       })
-      // Payments
+      .addCase(fetchAdminOrders.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Financials
       .addCase(fetchAdminPayments.fulfilled, (state, action) => {
-        if (action.payload) state.payments = action.payload;
+        state.payments = Array.isArray(action.payload) ? action.payload : [];
       })
-      // Commissions
+      .addCase(fetchAdminRefunds.fulfilled, (state, action) => {
+        state.refunds = Array.isArray(action.payload) ? action.payload : [];
+      })
       .addCase(fetchAdminCommissions.fulfilled, (state, action) => {
-        if (action.payload) state.commissions = action.payload;
+        state.commissions = Array.isArray(action.payload) ? action.payload : [];
       })
-      // Reviews
+
+      // Reviews & Coupons & Settings
       .addCase(fetchAdminReviews.fulfilled, (state, action) => {
-        if (action.payload) state.reviews = action.payload;
+        state.reviews = Array.isArray(action.payload) ? action.payload : [];
       })
-      // Coupons
       .addCase(fetchAdminCoupons.fulfilled, (state, action) => {
-        if (action.payload) state.coupons = action.payload;
+        state.coupons = Array.isArray(action.payload) ? action.payload : [];
       })
-      // Audit Logs
-      .addCase(fetchAdminAuditLogs.fulfilled, (state, action) => {
-        if (action.payload) state.auditLogs = action.payload;
-      })
-      // Settings
       .addCase(fetchAdminSettings.fulfilled, (state, action) => {
-        if (action.payload) state.settings = action.payload;
+        state.settings = action.payload;
       });
   },
 });
 
 export const {
   setTimeframe,
-  updateUserStatusLocal,
   updateSellerStatusLocal,
   updateProductStatusLocal,
   deleteProductLocal,
@@ -256,19 +257,22 @@ export const {
   updateBrandLocal,
   deleteBrandLocal,
   updateOrderStatusLocal,
-  updateRefundStatusLocal,
-  updateCommissionRateLocal,
+  deleteReviewLocal,
   moderateReviewLocal,
   addCouponLocal,
   updateCouponLocal,
+  toggleCouponStatusLocal,
   deleteCouponLocal,
   addPromotionLocal,
   updatePromotionLocal,
   deletePromotionLocal,
+  updateCommissionRateLocal,
+  updateUserStatusLocal,
+  updateRefundStatusLocal,
+  updateSettingsLocal,
   markNotificationReadLocal,
   markAllNotificationsReadLocal,
-  updateSettingsLocal,
-  addAuditLogLocal,
+  clearAdminError,
 } = adminSlice.actions;
 
 export default adminSlice.reducer;

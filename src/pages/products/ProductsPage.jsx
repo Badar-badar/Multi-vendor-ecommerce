@@ -15,6 +15,7 @@ import {
   resetFilters,
   addRecentSearch,
 } from '../../features/products/productSlice';
+import { fetchProducts } from '../../features/products/productThunk';
 import { categories } from '../../data/categories';
 import { brands } from '../../data/brands';
 import ProductCard from '../../components/product/ProductCard';
@@ -79,6 +80,24 @@ export const ProductsPage = () => {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const apiParams = {
+      page: currentPage,
+      limit: 12,
+    };
+    if (filters.category && filters.category !== 'all') apiParams.category = filters.category;
+    if (filters.subcategory && filters.subcategory !== 'all') apiParams.subcategory = filters.subcategory;
+    if (filters.brand && filters.brand !== 'all') apiParams.brand = filters.brand;
+    if (filters.seller && filters.seller !== 'all') apiParams.seller = filters.seller;
+    if (filters.searchQuery) apiParams.search = filters.searchQuery;
+    if (filters.sortBy) apiParams.sort = filters.sortBy;
+    if (filters.minPrice > 0) apiParams.minPrice = filters.minPrice;
+    if (filters.maxPrice < 50000) apiParams.maxPrice = filters.maxPrice;
+    if (filters.rating > 0) apiParams.rating = filters.rating;
+
+    dispatch(fetchProducts(apiParams));
+  }, [dispatch, filters, currentPage]);
+
   // 2. Synchronize Redux filter changes -> URL query parameters
   const updateUrlParams = (newFilters, newPage = currentPage) => {
     const params = new URLSearchParams();
@@ -131,24 +150,27 @@ export const ProductsPage = () => {
     <div className="min-h-screen bg-background text-text-main pb-20">
       {/* Category / Brand / Search Hero Banner Header */}
       {currentCategory ? (
-        <div className="relative bg-primary text-white py-12 lg:py-16 overflow-hidden border-b border-border">
-          <div className="absolute inset-0 opacity-20">
+        <div className="relative bg-slate-950 text-white py-14 lg:py-20 overflow-hidden border-b border-border/80">
+          <div className="absolute inset-0 z-0">
             <img
               src={currentCategory.image}
               alt=""
               className="w-full h-full object-cover object-center"
             />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/60" />
+
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-xs">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-md border border-white/15">
               <Sparkles className="w-3.5 h-3.5 text-accent" />
               <span>Department Spotlight</span>
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white">
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
               {currentCategory.name}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-base text-slate-300 max-w-2xl leading-relaxed font-light">
               {currentCategory.description}
             </p>
 
@@ -164,7 +186,7 @@ export const ProductsPage = () => {
                   className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     filters.subcategory === 'all'
                       ? 'bg-accent text-white shadow-xs'
-                      : 'bg-white/10 hover:bg-white/20 text-slate-200'
+                      : 'bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10'
                   }`}
                 >
                   All {currentCategory.name}
@@ -180,7 +202,7 @@ export const ProductsPage = () => {
                     className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       filters.subcategory === sub.slug
                         ? 'bg-accent text-white shadow-xs'
-                        : 'bg-white/10 hover:bg-white/20 text-slate-200'
+                        : 'bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10'
                     }`}
                   >
                     {sub.name}
@@ -191,9 +213,19 @@ export const ProductsPage = () => {
           </div>
         </div>
       ) : currentBrand ? (
-        <div className="relative bg-surface-muted py-12 lg:py-16 border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-border bg-surface shadow-card shrink-0">
+        <div className="relative bg-slate-950 text-white py-14 lg:py-20 overflow-hidden border-b border-border/80">
+          <div className="absolute inset-0 z-0">
+            <img
+              src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=2000&auto=format&fit=crop"
+              alt=""
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/40" />
+            <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-white/20 bg-white shadow-xl shrink-0">
               <img
                 src={currentBrand.logo}
                 alt={currentBrand.name}
@@ -201,14 +233,14 @@ export const ProductsPage = () => {
               />
             </div>
             <div className="space-y-2 text-center sm:text-left">
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent uppercase tracking-wider">
-                <Store className="w-3.5 h-3.5" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-md border border-white/15">
+                <Store className="w-3.5 h-3.5 text-accent" />
                 <span>Verified Sovereign Atelier • {currentBrand.origin}</span>
               </div>
-              <h1 className="font-serif text-3xl sm:text-4xl font-bold text-text-main">
+              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
                 {currentBrand.name}
               </h1>
-              <p className="text-xs sm:text-sm text-text-muted max-w-2xl leading-relaxed">
+              <p className="text-xs sm:text-base text-slate-300 max-w-2xl leading-relaxed font-light">
                 {currentBrand.description}
               </p>
             </div>
@@ -242,15 +274,26 @@ export const ProductsPage = () => {
           </div>
         </div>
       ) : (
-        <div className="bg-surface py-8 sm:py-10 border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <span className="text-xs font-bold uppercase tracking-widest text-accent block mb-1">
-              Artisan Catalog
-            </span>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-text-main">
+        <div className="relative bg-slate-950 text-white py-14 lg:py-18 overflow-hidden border-b border-border/80">
+          <div className="absolute inset-0 z-0">
+            <img
+              src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2000&auto=format&fit=crop"
+              alt="Artisan Catalog"
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/40" />
+            <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-accent-light text-xs font-semibold backdrop-blur-md border border-white/15">
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
+              <span>The Sovereign Collection</span>
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
               Explore Sovereign Creations
             </h1>
-            <p className="text-xs text-text-muted mt-1">
+            <p className="text-xs sm:text-base text-slate-300 max-w-2xl font-light">
               Browse {total} bespoke pieces hand-crafted by verified independent master ateliers worldwide.
             </p>
           </div>

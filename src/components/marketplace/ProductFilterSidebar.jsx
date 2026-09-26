@@ -1,41 +1,86 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { SlidersHorizontal, RotateCcw, Star, Check } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectAllProducts, selectProductFilters } from '../../features/products/productSelectors';
 import { setFilter, resetFilters } from '../../features/products/productSlice';
-import { categories } from '../../data/categories';
-import { brands } from '../../data/brands';
+import { categories as staticCategories } from '../../data/categories';
+import { brands as staticBrands } from '../../data/brands';
+import { categoryApi } from '../../api/categoryApi';
+import { brandApi } from '../../api/brandApi';
 import { formatCurrency } from '../../utils/formatCurrency';
 
 export const ProductFilterSidebar = ({ isMobile = false, onCloseMobile }) => {
   const dispatch = useDispatch();
-  const allProducts = useSelector(selectAllProducts);
+  const allProducts = useSelector(selectAllProducts) || [];
   const filters = useSelector(selectProductFilters);
+
+  const [categoriesList, setCategoriesList] = useState(staticCategories);
+  const [brandsList, setBrandsList] = useState(staticBrands);
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const [catRes, brandRes] = await Promise.allSettled([
+          categoryApi.getCategories(),
+          brandApi.getBrands(),
+        ]);
+        if (catRes.status === 'fulfilled') {
+          const cList = catRes.value?.categories || catRes.value?.data?.categories || (Array.isArray(catRes.value) ? catRes.value : []);
+          if (cList.length > 0) setCategoriesList(cList);
+        }
+        if (brandRes.status === 'fulfilled') {
+          const bList = brandRes.value?.brands || brandRes.value?.data?.brands || (Array.isArray(brandRes.value) ? brandRes.value : []);
+          if (bList.length > 0) setBrandsList(bList);
+        }
+      } catch {
+        // Safe fallback
+      }
+    };
+    fetchMetadata();
+  }, []);
+
+  const getCategorySlug = (p) => {
+    if (!p) return '';
+    if (typeof p.category === 'string') return p.category.toLowerCase();
+    return (p.category?.slug || p.category?.name || '').toLowerCase();
+  };
+
+  const getBrandSlug = (p) => {
+    if (!p) return '';
+    if (typeof p.brand === 'string') return p.brand.toLowerCase();
+    return (p.brand?.slug || p.brand?.name || '').toLowerCase();
+  };
 
   // Compute category product counts
   const categoryCounts = useMemo(() => {
     const counts = { all: allProducts.length };
-    categories.forEach((cat) => {
-      counts[cat.slug] = allProducts.filter((p) => p.category?.slug === cat.slug).length;
+    categoriesList.forEach((cat) => {
+      const target = (cat.slug || cat.name || '').toLowerCase();
+      counts[cat.slug || target] = allProducts.filter((p) => {
+        const cSlug = getCategorySlug(p);
+        return cSlug === target || cSlug === (cat.slug || '').toLowerCase();
+      }).length;
     });
     return counts;
-  }, [allProducts]);
+  }, [allProducts, categoriesList]);
 
   // Compute brand product counts
   const brandCounts = useMemo(() => {
     const counts = {};
-    brands.forEach((b) => {
-      counts[b.slug] = allProducts.filter(
-        (p) => p.brand?.slug === b.slug || p.brand?.id === b.id
-      ).length;
+    brandsList.forEach((b) => {
+      const target = (b.slug || b.name || '').toLowerCase();
+      counts[b.slug || target] = allProducts.filter((p) => {
+        const bSlug = getBrandSlug(p);
+        return bSlug === target || bSlug === (b.slug || '').toLowerCase();
+      }).length;
     });
     return counts;
-  }, [allProducts]);
+  }, [allProducts, brandsList]);
 
   // Available subcategories for current category
   const activeCategoryObj = useMemo(() => {
-    return categories.find((c) => c.slug === filters.category);
-  }, [filters.category]);
+    return categoriesList.find((c) => (c.slug || c.name?.toLowerCase()) === filters.category);
+  }, [categoriesList, filters.category]);
 
   const pricePresets = [
     { label: 'All Prices', min: 0, max: 5000 },
@@ -86,24 +131,27 @@ export const ProductFilterSidebar = ({ isMobile = false, onCloseMobile }) => {
             <span className="text-[10px] opacity-75">{categoryCounts.all}</span>
           </button>
 
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => {
-                dispatch(setFilter({ category: cat.slug, subcategory: 'all' }));
-                if (isMobile && onCloseMobile) onCloseMobile();
-              }}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                filters.category === cat.slug
-                  ? 'bg-primary text-white font-semibold'
-                  : 'text-text-muted hover:bg-surface-muted hover:text-text-main'
-              }`}
-            >
-              <span>{cat.name}</span>
-              <span className="text-[10px] opacity-75">{categoryCounts[cat.slug] || 0}</span>
-            </button>
-          ))}
+          {categoriesList.map((cat) => {
+            const catSlug = cat.slug || cat.name?.toLowerCase();
+            return (
+              <button
+                key={cat._id || cat.id || catSlug}
+                type="button"
+                onClick={() => {
+                  dispatch(setFilter({ category: catSlug, subcategory: 'all' }));
+                  if (isMobile && onCloseMobile) onCloseMobile();
+                }}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                  filters.category === catSlug
+                    ? 'bg-primary text-white font-semibold'
+                    : 'text-text-muted hover:bg-surface-muted hover:text-text-main'
+                }`}
+              >
+                <span>{cat.name}</span>
+                <span className="text-[10px] opacity-75">{categoryCounts[catSlug] || categoryCounts[cat.slug] || 0}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -125,20 +173,23 @@ export const ProductFilterSidebar = ({ isMobile = false, onCloseMobile }) => {
             >
               <span>All Subcategories</span>
             </button>
-            {activeCategoryObj.subcategories.map((sub) => (
-              <button
-                key={sub.id}
-                type="button"
-                onClick={() => dispatch(setFilter({ subcategory: sub.slug }))}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                  filters.subcategory === sub.slug
-                    ? 'bg-primary text-white font-semibold'
-                    : 'text-text-muted hover:bg-surface-muted hover:text-text-main'
-                }`}
-              >
-                <span>{sub.name}</span>
-              </button>
-            ))}
+            {activeCategoryObj.subcategories.map((sub) => {
+              const subSlug = sub.slug || sub.name?.toLowerCase();
+              return (
+                <button
+                  key={sub._id || sub.id || subSlug}
+                  type="button"
+                  onClick={() => dispatch(setFilter({ subcategory: subSlug }))}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                    filters.subcategory === subSlug
+                      ? 'bg-primary text-white font-semibold'
+                      : 'text-text-muted hover:bg-surface-muted hover:text-text-main'
+                  }`}
+                >
+                  <span>{sub.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -160,21 +211,24 @@ export const ProductFilterSidebar = ({ isMobile = false, onCloseMobile }) => {
           >
             <span>All Ateliers</span>
           </button>
-          {brands.map((b) => (
-            <button
-              key={b.id}
-              type="button"
-              onClick={() => dispatch(setFilter({ brand: b.slug }))}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                filters.brand === b.slug
-                  ? 'bg-primary text-white font-semibold'
-                  : 'text-text-muted hover:bg-surface-muted hover:text-text-main'
-              }`}
-            >
-              <span className="truncate">{b.name}</span>
-              <span className="text-[10px] opacity-75">{brandCounts[b.slug] || 0}</span>
-            </button>
-          ))}
+          {brandsList.map((b) => {
+            const bSlug = b.slug || b.name?.toLowerCase();
+            return (
+              <button
+                key={b._id || b.id || bSlug}
+                type="button"
+                onClick={() => dispatch(setFilter({ brand: bSlug }))}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                  filters.brand === bSlug
+                    ? 'bg-primary text-white font-semibold'
+                    : 'text-text-muted hover:bg-surface-muted hover:text-text-main'
+                }`}
+              >
+                <span className="truncate">{b.name}</span>
+                <span className="text-[10px] opacity-75">{brandCounts[bSlug] || brandCounts[b.slug] || 0}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

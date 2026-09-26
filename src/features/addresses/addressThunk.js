@@ -1,16 +1,15 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { addressApi } from '../../api/addressApi';
+import addressApi from '../../api/addressApi';
 
 export const fetchAddresses = createAsyncThunk(
   'addresses/fetchAddresses',
   async (_, { rejectWithValue }) => {
     try {
       const response = await addressApi.getAddresses();
-      return response.data?.addresses || response.data || [];
+      const data = response.data || response;
+      return data.addresses || (Array.isArray(data) ? data : []);
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch saved addresses.'
-      );
+      return rejectWithValue(error.message || 'Failed to fetch saved addresses.');
     }
   }
 );
@@ -20,25 +19,23 @@ export const addAddress = createAsyncThunk(
   async (addressData, { rejectWithValue }) => {
     try {
       const response = await addressApi.createAddress(addressData);
-      return response.data?.address || response.data;
+      const data = response.data || response;
+      return data.address || data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to add address.'
-      );
+      return rejectWithValue(error.message || 'Failed to add address.');
     }
   }
 );
 
 export const updateAddress = createAsyncThunk(
   'addresses/updateAddress',
-  async ({ id, data }, { rejectWithValue }) => {
+  async ({ id, data: addressData }, { rejectWithValue }) => {
     try {
-      const response = await addressApi.updateAddress(id, data);
-      return response.data?.address || response.data;
+      const response = await addressApi.updateAddress(id, addressData);
+      const data = response.data || response;
+      return data.address || data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to update address.'
-      );
+      return rejectWithValue(error.message || 'Failed to update address.');
     }
   }
 );
@@ -50,9 +47,20 @@ export const deleteAddress = createAsyncThunk(
       await addressApi.deleteAddress(id);
       return id;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to delete address.'
-      );
+      return rejectWithValue(error.message || 'Failed to delete address.');
+    }
+  }
+);
+
+export const setDefaultAddressThunk = createAsyncThunk(
+  'addresses/setDefault',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await addressApi.setDefaultAddress(id);
+      const data = response.data || response;
+      return data.address || id;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to set default address.');
     }
   }
 );

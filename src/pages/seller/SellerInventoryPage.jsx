@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -18,6 +18,7 @@ import {
 import toast from 'react-hot-toast';
 import { selectSellerProducts } from '../../features/seller/sellerSelectors';
 import { updateInventoryStock } from '../../features/seller/sellerSlice';
+import { fetchSellerProducts } from '../../features/seller/sellerThunk';
 import { formatCurrency } from '../../utils/formatCurrency';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -25,6 +26,10 @@ import Badge from '../../components/common/Badge';
 export const SellerInventoryPage = () => {
   const dispatch = useDispatch();
   const products = useSelector(selectSellerProducts) || [];
+
+  useEffect(() => {
+    dispatch(fetchSellerProducts());
+  }, [dispatch]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All'); // 'All' | 'In Stock' | 'Low Stock' | 'Out of Stock'

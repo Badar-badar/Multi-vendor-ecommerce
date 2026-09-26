@@ -29,7 +29,8 @@ import {
   markAllAsRead,
 } from '../../features/notifications/notificationSlice';
 import { headerNavigation } from '../../data/navigation';
-import { categories } from '../../data/categories';
+import { categories as staticCategories } from '../../data/categories';
+import { categoryApi } from '../../api/categoryApi';
 import Badge from '../common/Badge';
 import Logo from '../common/Logo';
 import SearchAutocomplete from '../marketplace/SearchAutocomplete';
@@ -42,6 +43,7 @@ export const Navbar = () => {
   const notifications = useSelector(selectNotifications) || [];
   const unreadNotifCount = useSelector(selectUnreadNotificationsCount) || 0;
 
+  const [categoryList, setCategoryList] = useState(staticCategories);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -50,6 +52,21 @@ export const Navbar = () => {
   const categoriesRef = useRef(null);
   const userMenuRef = useRef(null);
   const notificationsRef = useRef(null);
+
+  useEffect(() => {
+    const fetchLiveCategories = async () => {
+      try {
+        const res = await categoryApi.getCategories();
+        const list = res?.categories || res?.data?.categories || (Array.isArray(res) ? res : []);
+        if (list && list.length > 0) {
+          setCategoryList(list);
+        }
+      } catch {
+        // Safe fallback
+      }
+    };
+    fetchLiveCategories();
+  }, []);
 
   const closeAllMenus = () => {
     setMobileMenuOpen(false);
@@ -88,7 +105,15 @@ export const Navbar = () => {
             Complimentary insured worldwide shipping on orders over $200
           </div>
           <div className="hidden sm:flex items-center gap-4 text-text-muted shrink-0">
-            {isSeller ? (
+            {isAdmin ? (
+              <Link
+                to="/admin/dashboard"
+                onClick={closeAllMenus}
+                className="hover:text-primary font-semibold transition-colors flex items-center gap-1 text-text-main"
+              >
+                <Shield className="w-3.5 h-3.5 text-primary" /> Admin Portal
+              </Link>
+            ) : isSeller ? (
               <Link
                 to="/seller/dashboard"
                 onClick={closeAllMenus}
@@ -442,15 +467,15 @@ export const Navbar = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {categories.map((cat) => (
+                  {categoryList.map((cat) => (
                     <Link
-                      key={cat.id}
-                      to={`/products?category=${cat.slug}`}
+                      key={cat._id || cat.id || cat.slug}
+                      to={`/products?category=${cat.slug || cat.name?.toLowerCase()}`}
                       onClick={() => setCategoriesDropdownOpen(false)}
                       className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-surface-muted transition-colors border border-transparent hover:border-border group"
                     >
                       <img
-                        src={cat.image}
+                        src={cat.image || cat.bannerImage || 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=400&q=80'}
                         alt={cat.name}
                         className="w-11 h-11 rounded-lg object-cover shrink-0 border border-border"
                       />
@@ -459,7 +484,7 @@ export const Navbar = () => {
                           {cat.name}
                         </p>
                         <p className="text-[11px] text-text-muted line-clamp-1 mt-0.5">
-                          {cat.itemCount} items available
+                          {cat.itemCount || cat.productCount || 'Exclusive'} items available
                         </p>
                       </div>
                     </Link>
@@ -498,10 +523,10 @@ export const Navbar = () => {
 
             <div className="h-3.5 w-px bg-border/80 mx-1" />
 
-            {categories.slice(0, 4).map((cat) => (
+            {categoryList.slice(0, 4).map((cat) => (
               <Link
-                key={cat.id}
-                to={`/products?category=${cat.slug}`}
+                key={cat._id || cat.id || cat.slug}
+                to={`/products?category=${cat.slug || cat.name?.toLowerCase()}`}
                 className="px-2.5 py-1 rounded-full text-xs font-normal text-text-muted hover:text-primary hover:bg-primary-light/50 transition-colors"
               >
                 {cat.name}
@@ -528,10 +553,10 @@ export const Navbar = () => {
             <Layers className="w-3.5 h-3.5 text-accent" />
             <span>All Departments</span>
           </Link>
-          {categories.map((cat) => (
+          {categoryList.map((cat) => (
             <Link
-              key={cat.id}
-              to={`/products?category=${cat.slug}`}
+              key={cat._id || cat.id || cat.slug}
+              to={`/products?category=${cat.slug || cat.name?.toLowerCase()}`}
               className="px-3 py-1.5 rounded-lg bg-surface text-text-muted hover:text-text-main text-xs font-medium shrink-0 border border-border/60 hover:bg-surface-muted transition-colors"
             >
               {cat.name}
@@ -569,15 +594,15 @@ export const Navbar = () => {
               Departments
             </p>
             <div className="grid grid-cols-1 gap-1">
-              {categories.map((cat) => (
+              {categoryList.map((cat) => (
                 <Link
-                  key={cat.id}
-                  to={`/products?category=${cat.slug}`}
+                  key={cat._id || cat.id || cat.slug}
+                  to={`/products?category=${cat.slug || cat.name?.toLowerCase()}`}
                   onClick={closeAllMenus}
                   className="flex items-center justify-between px-3 py-2 text-xs font-medium text-text-muted hover:text-text-main hover:bg-surface-muted rounded-lg transition-colors"
                 >
                   <span>{cat.name}</span>
-                  <span className="text-[10px] text-text-subtle">{cat.itemCount} items</span>
+                  <span className="text-[10px] text-text-subtle">{cat.itemCount || cat.productCount || 'Catalog'}</span>
                 </Link>
               ))}
             </div>

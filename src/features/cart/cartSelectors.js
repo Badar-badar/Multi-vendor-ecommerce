@@ -22,13 +22,34 @@ export const selectCartGroupedBySeller = createSelector(
   (items) => {
     const groups = {};
 
-    items.forEach((item) => {
-      const seller = item.product?.seller || {
+    (items || []).forEach((item) => {
+      if (!item) return;
+      const product = item.product || {};
+      
+      let seller = {
         id: 'zareen-direct',
         storeName: 'Zareen Master Atelier',
         verified: true,
         country: 'France',
       };
+
+      if (product.seller) {
+        if (typeof product.seller === 'object') {
+          seller = {
+            id: product.seller._id || product.seller.id || 'zareen-direct',
+            storeName: product.seller.storeName || product.seller.name || 'Zareen Master Atelier',
+            verified: product.seller.verified ?? true,
+            country: product.seller.country || 'France',
+          };
+        } else if (typeof product.seller === 'string') {
+          seller = {
+            id: product.seller,
+            storeName: 'Zareen Master Atelier',
+            verified: true,
+            country: 'France',
+          };
+        }
+      }
 
       const sellerKey = seller.id || seller.storeName || 'zareen-direct';
 
@@ -41,7 +62,9 @@ export const selectCartGroupedBySeller = createSelector(
       }
 
       groups[sellerKey].items.push(item);
-      groups[sellerKey].sellerSubtotal += (Number(item.price) || 0) * (Number(item.quantity) || 1);
+      const itemUnitPrice = Number(item.price) || Number(product.price) || 0;
+      const itemQty = Number(item.quantity) || 1;
+      groups[sellerKey].sellerSubtotal += itemUnitPrice * itemQty;
     });
 
     return Object.values(groups);
@@ -54,21 +77,26 @@ export const selectCartStockIssues = createSelector(
   (items) => {
     const issues = [];
 
-    items.forEach((item) => {
-      const stock = item.product?.stock ?? 10;
+    (items || []).forEach((item) => {
+      if (!item) return;
+      const product = item.product || {};
+      const stock = product.stock ?? 10;
+      const itemId = item.id || item._id;
+      const productName = product.name || 'Selected Creation';
+
       if (stock <= 0) {
         issues.push({
-          itemId: item.id,
-          productName: item.product?.name,
+          itemId,
+          productName,
           issue: 'out_of_stock',
-          message: `${item.product?.name} is currently out of stock.`,
+          message: `${productName} is currently out of stock.`,
         });
       } else if (item.quantity > stock) {
         issues.push({
-          itemId: item.id,
-          productName: item.product?.name,
+          itemId,
+          productName,
           issue: 'quantity_exceeded',
-          message: `Only ${stock} available for ${item.product?.name}.`,
+          message: `Only ${stock} available for ${productName}.`,
           availableStock: stock,
         });
       }

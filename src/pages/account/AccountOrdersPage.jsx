@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { selectOrders } from '../../features/orders/orderSelectors';
+import { fetchMyOrders } from '../../features/orders/orderThunk';
 import { cancelOrderAction } from '../../features/orders/orderSlice';
 import { addToCart } from '../../features/cart/cartSlice';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -49,6 +50,10 @@ export const AccountOrdersPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const orders = useSelector(selectOrders) || [];
+
+  useEffect(() => {
+    dispatch(fetchMyOrders());
+  }, [dispatch]);
 
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');

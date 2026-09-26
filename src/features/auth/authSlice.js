@@ -4,10 +4,10 @@ import {
   registerUser,
   fetchCurrentUser,
   logoutUser,
-  googleAuthUser,
   verifyEmailUser,
   forgotPasswordUser,
   resetPasswordUser,
+  updateProfileUser,
 } from './authThunk';
 
 const initialState = {
@@ -53,25 +53,15 @@ export const authSlice = createSlice({
       state.passwordResetSuccess = false;
       state.error = null;
     },
-    setMockUser: (state, action) => {
-      // For instant frontend role testing (customer, seller, admin, guest)
-      if (action.payload) {
-        state.user = action.payload;
-        state.role = action.payload.role || 'customer';
-        state.isAuthenticated = true;
-        state.sessionExpired = false;
-      } else {
-        state.user = null;
-        state.role = null;
-        state.isAuthenticated = false;
-      }
-      state.initialized = true;
-      state.error = null;
-    },
     updateUserProfile: (state, action) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
       }
+    },
+    setMockUser: (state, action) => {
+      state.user = action.payload;
+      state.role = action.payload?.role || 'customer';
+      state.isAuthenticated = !!action.payload;
     },
     resetAuth: (state) => {
       state.user = null;
@@ -94,9 +84,10 @@ export const authSlice = createSlice({
         state.loading = false;
         state.initialized = true;
         state.sessionExpired = false;
-        if (action.payload) {
-          state.user = action.payload;
-          state.role = action.payload?.role || 'customer';
+        const user = action.payload?.data?.user || action.payload?.user || action.payload;
+        if (user && user._id) {
+          state.user = user;
+          state.role = user.role || 'customer';
           state.isAuthenticated = true;
         } else {
           state.user = null;
@@ -119,8 +110,9 @@ export const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload.user;
-        state.role = action.payload.user?.role || 'customer';
+        const user = action.payload?.data?.user || action.payload?.user || action.payload;
+        state.user = user;
+        state.role = user?.role || 'customer';
         state.isAuthenticated = true;
         state.sessionExpired = false;
         state.initialized = true;
@@ -137,35 +129,26 @@ export const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload.user;
-        state.role = action.payload.user?.role || 'customer';
+        const user = action.payload?.data?.user || action.payload?.user || action.payload;
+        state.user = user;
+        state.role = user?.role || 'customer';
         state.isAuthenticated = true;
         state.sessionExpired = false;
         state.initialized = true;
-        state.verificationPending = true;
-        state.emailToVerify = action.payload.user?.email || null;
+        state.verificationPending = !user?.isEmailVerified;
+        state.emailToVerify = user?.email || null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
-      // Google OAuth
-      .addCase(googleAuthUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(googleAuthUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload.user;
-        state.role = action.payload.user?.role || 'customer';
-        state.isAuthenticated = true;
-        state.sessionExpired = false;
-        state.initialized = true;
-      })
-      .addCase(googleAuthUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+      // Update Profile
+      .addCase(updateProfileUser.fulfilled, (state, action) => {
+        const user = action.payload?.data?.user || action.payload?.user || action.payload;
+        if (user) {
+          state.user = { ...state.user, ...user };
+        }
       })
 
       // Verify Email
@@ -235,8 +218,8 @@ export const {
   setEmailToVerify,
   clearVerificationState,
   resetPasswordFlags,
-  setMockUser,
   updateUserProfile,
+  setMockUser,
   resetAuth,
 } = authSlice.actions;
 

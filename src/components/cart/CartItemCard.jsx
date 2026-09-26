@@ -8,8 +8,15 @@ export const CartItemCard = ({
   onRemove,
   onSaveToWishlist,
 }) => {
-  const { product, quantity, price, originalPrice, selectedVariant } = item;
-  const maxStock = product?.stock ?? 10;
+  if (!item) return null;
+  const product = item.product || {};
+  const quantity = Number(item.quantity) || 1;
+  const price = Number(item.price) || Number(product.price) || 0;
+  const originalPrice = Number(item.originalPrice) || Number(product.compareAtPrice) || price;
+  const selectedVariant = item.selectedVariant || item.selectedVariants;
+  const itemId = item.id || item._id;
+
+  const maxStock = product.stock ?? 10;
   const isOutOfStock = maxStock <= 0;
   const isLowStock = maxStock > 0 && maxStock <= 3;
   const isMaxReached = quantity >= maxStock;
@@ -19,7 +26,12 @@ export const CartItemCard = ({
       ? Math.round(((originalPrice - price) / originalPrice) * 100)
       : 0;
 
-  const itemSubtotal = (Number(price) || 0) * (Number(quantity) || 1);
+  const itemSubtotal = price * quantity;
+  const productImage = Array.isArray(product.images) && product.images.length > 0
+    ? (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.url)
+    : (product.image || 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=400&auto=format&fit=crop');
+
+  const productUrl = `/products/${product.slug || product.id || product._id || ''}`;
 
   return (
     <div
@@ -32,12 +44,12 @@ export const CartItemCard = ({
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 items-start">
         {/* Product Image */}
         <Link
-          to={`/products/${product?.slug || product?.id}`}
+          to={productUrl}
           className="relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-surface-muted border border-border group"
         >
           <img
-            src={product?.images?.[0] || 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=400&auto=format&fit=crop'}
-            alt={product?.name}
+            src={productImage}
+            alt={product.name || 'Product'}
             className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
           />
           {discountPercent > 0 && (
@@ -53,7 +65,7 @@ export const CartItemCard = ({
             {/* Brand & Stock Header */}
             <div className="flex items-center justify-between gap-2 mb-1">
               <span className="text-[11px] font-bold text-accent uppercase tracking-wider">
-                {product?.brand || 'Zareen Masterpiece'}
+                {product.brand?.name || product.brand || 'Zareen Masterpiece'}
               </span>
 
               {/* Stock Status Badge */}
@@ -74,23 +86,30 @@ export const CartItemCard = ({
 
             {/* Title */}
             <Link
-              to={`/products/${product?.slug || product?.id}`}
+              to={productUrl}
               className="text-sm sm:text-base font-serif font-bold text-text-main hover:text-accent transition-colors line-clamp-1 block"
             >
-              {product?.name}
+              {product.name || 'Artisan Creation'}
             </Link>
 
             {/* Variant Attributes */}
-            {selectedVariant && Object.keys(selectedVariant).length > 0 && (
+            {selectedVariant && typeof selectedVariant === 'object' && Object.keys(selectedVariant).length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {Object.entries(selectedVariant).map(([key, val]) => (
                   <span
                     key={key}
                     className="inline-flex items-center text-[11px] text-text-muted bg-surface-muted border border-border px-2 py-0.5 rounded-md capitalize"
                   >
-                    <strong className="font-semibold text-text-main mr-1">{key}:</strong> {val}
+                    <strong className="font-semibold text-text-main mr-1">{key}:</strong> {typeof val === 'object' ? JSON.stringify(val) : String(val)}
                   </span>
                 ))}
+              </div>
+            )}
+            {typeof selectedVariant === 'string' && selectedVariant.trim() && (
+              <div className="mt-1.5">
+                <span className="inline-flex items-center text-[11px] text-text-muted bg-surface-muted border border-border px-2 py-0.5 rounded-md">
+                  <strong className="font-semibold text-text-main mr-1">Variant:</strong> {selectedVariant}
+                </span>
               </div>
             )}
           </div>
@@ -102,9 +121,9 @@ export const CartItemCard = ({
               <div className="flex items-center border border-border rounded-xl bg-surface-muted overflow-hidden shadow-xs">
                 <button
                   type="button"
-                  onClick={() => onUpdateQuantity(item.id, quantity - 1)}
+                  onClick={() => onUpdateQuantity(itemId, quantity - 1)}
                   disabled={quantity <= 1}
-                  className="w-8 h-8 flex items-center justify-center text-xs font-bold text-text-main hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 flex items-center justify-center text-xs font-bold text-text-main hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   aria-label="Decrease quantity"
                 >
                   -
@@ -114,9 +133,9 @@ export const CartItemCard = ({
                 </span>
                 <button
                   type="button"
-                  onClick={() => onUpdateQuantity(item.id, quantity + 1)}
+                  onClick={() => onUpdateQuantity(itemId, quantity + 1)}
                   disabled={isMaxReached || isOutOfStock}
-                  className="w-8 h-8 flex items-center justify-center text-xs font-bold text-text-main hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 flex items-center justify-center text-xs font-bold text-text-main hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   aria-label="Increase quantity"
                 >
                   +
@@ -159,7 +178,7 @@ export const CartItemCard = ({
 
               <button
                 type="button"
-                onClick={() => onRemove(item.id)}
+                onClick={() => onRemove(itemId)}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-text-muted hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                 title="Remove item"
               >

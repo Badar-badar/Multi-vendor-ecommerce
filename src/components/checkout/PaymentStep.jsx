@@ -54,7 +54,7 @@ const AmexLogo = ({ active }) => (
   </span>
 );
 
-export const PAYMENT_METHODS = [
+const PAYMENT_METHODS = [
   {
     id: 'stripe_card',
     name: 'Credit or Debit Card',

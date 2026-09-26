@@ -27,49 +27,6 @@ import {
 import Button from '../../components/common/Button';
 import toast from 'react-hot-toast';
 
-// Fallback seed payments for patron accounts if API returns empty
-const DEFAULT_CUSTOMER_PAYMENTS = [
-  {
-    id: 'pay_1N9z8X2eZvKYlo2C8u12984',
-    orderId: 'ord-84920',
-    orderNumber: 'ZRN-84920-7712',
-    date: '2026-09-08T14:30:00Z',
-    amount: 1450.0,
-    currency: 'USD',
-    method: 'stripe_card',
-    brand: 'Visa',
-    last4: '4242',
-    status: 'paid',
-    receiptUrl: '#',
-  },
-  {
-    id: 'pay_1N8y7W1dYuJXkn1B7t01873',
-    orderId: 'ord-73819',
-    orderNumber: 'ZRN-73819-6601',
-    date: '2026-08-24T11:15:00Z',
-    amount: 890.0,
-    currency: 'USD',
-    method: 'digital_wallet',
-    brand: 'Apple Pay',
-    last4: '8819',
-    status: 'paid',
-    receiptUrl: '#',
-  },
-  {
-    id: 'pay_1N7x6V0cXtIWjm0A6s90762',
-    orderId: 'ord-62710',
-    orderNumber: 'ZRN-62710-5590',
-    date: '2026-07-15T09:45:00Z',
-    amount: 320.0,
-    currency: 'USD',
-    method: 'stripe_card',
-    brand: 'Mastercard',
-    last4: '5521',
-    status: 'refunded',
-    receiptUrl: '#',
-  },
-];
-
 export const AccountPaymentsPage = () => {
   const dispatch = useDispatch();
   const apiPayments = useSelector(selectCustomerPayments);
@@ -82,8 +39,7 @@ export const AccountPaymentsPage = () => {
     dispatch(fetchCustomerPaymentsThunk());
   }, [dispatch]);
 
-  const payments =
-    apiPayments && apiPayments.length > 0 ? apiPayments : DEFAULT_CUSTOMER_PAYMENTS;
+  const payments = Array.isArray(apiPayments) ? apiPayments : [];
 
   const filteredPayments = payments.filter((p) => {
     const matchesSearch =

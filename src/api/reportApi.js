@@ -19,6 +19,9 @@ export const reportApi = {
   // Payment Settlement & Gateway Distribution
   getPaymentReport: (params = {}) => api.get('/admin/reports/payments', { params }),
 
+  queueReport: (reportType, params = {}) =>
+    api.post('/admin/reports/queue', { reportType, ...params }),
+
   // Refund Claims & Dispute Ratio
   getRefundReport: (params = {}) => api.get('/admin/reports/refunds', { params }),
 

@@ -8,69 +8,101 @@ import {
   Package,
   MapPin,
   ExternalLink,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '../../components/common/Button';
 import Input from '../../components/forms/Input';
 import Badge from '../../components/common/Badge';
 import { formatCurrency } from '../../utils/formatCurrency';
+import orderApi from '../../api/orderApi';
 
 export const OrderTrackingPage = () => {
-  const [orderNumber, setOrderNumber] = useState('ZRN-2026-9821');
-  const [email, setEmail] = useState('v.sterling@mayfair.co.uk');
-  const [trackingResult, setTrackingResult] = useState({
-    orderNumber: 'ZRN-2026-9821',
-    carrier: 'DHL Express Insured Sovereign Signature',
-    trackingNumber: 'DHL-ZRN-894029102-CH',
-    status: 'In Air Transit',
-    origin: 'Florence Atelier, Italy',
-    destination: 'London W1K 6ZA, United Kingdom',
-    estimatedDelivery: 'September 8, 2026 (Before 12:00 PM)',
-    items: [
-      { name: '18k Solstice Choker with Pavé Diamonds', qty: 1, price: 4850 },
-      { name: 'Midnight Cashmere Structured Overcoat', qty: 1, price: 3200 },
-    ],
-    timeline: [
+  const [orderNumber, setOrderNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [trackingResult, setTrackingResult] = useState(null);
+
+  const buildTimelineFromOrder = (order) => {
+    const status = (order.status || 'Pending').toLowerCase();
+    const createdDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Recent';
+    
+    return [
       {
-        title: 'Commission Authorized & Escrow Locked',
-        date: 'Sept 6, 2026 • 14:10',
+        title: 'Commission Registered & Payment Verified',
+        date: createdDate,
         done: true,
-        desc: 'Payment captured securely via Stripe 3D Secure.',
+        desc: 'Payment captured securely via Stripe Sovereign Escrow.',
       },
       {
-        title: 'Atelier Hallmarked & Inspected',
-        date: 'Sept 6, 2026 • 16:30',
-        done: true,
-        desc: 'Piece passed 100% material provenance audit in Florence.',
+        title: 'Maison Verified & Prepared in Atelier',
+        date: status !== 'pending' ? 'Verified' : 'Pending',
+        done: ['processing', 'packed', 'confirmed', 'shipped', 'in transit', 'out for delivery', 'delivered'].includes(status),
+        desc: 'Item authenticity verified and prepared for armored transport.',
       },
       {
         title: 'Collected by Private Air Courier',
-        date: 'Sept 7, 2026 • 09:15',
-        done: true,
-        desc: 'Handed to DHL Express with full $8,050.00 transit insurance.',
-      },
-      {
-        title: 'Customs Pre-Clearance Complete',
-        date: 'Sept 7, 2026 • 14:40',
-        done: true,
-        desc: 'UK border import clearance completed without duty holds.',
+        date: ['shipped', 'in transit', 'out for delivery', 'delivered'].includes(status) ? 'Dispatched' : 'Pending',
+        done: ['shipped', 'in transit', 'out for delivery', 'delivered'].includes(status),
+        desc: `Handed to ${order.courier || 'DHL Express'} with full transit insurance.`,
       },
       {
         title: 'Out for White-Glove Signature Delivery',
-        date: 'Estimated Sept 8, 2026',
-        done: false,
-        desc: 'Courier will request recipient government photo ID and signature.',
+        date: ['out for delivery', 'delivered'].includes(status) ? 'Out for Handover' : 'Pending',
+        done: ['out for delivery', 'delivered'].includes(status),
+        desc: 'Courier will request recipient signature and government ID upon arrival.',
       },
-    ],
-  });
+      {
+        title: 'Commission Handover Completed',
+        date: status === 'delivered' ? 'Delivered' : 'Pending',
+        done: status === 'delivered',
+        desc: 'Package successfully delivered and signed for.',
+      },
+    ];
+  };
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    if (!orderNumber.trim()) {
-      toast.error('Please enter an order number.');
+    const trimmed = orderNumber.trim();
+    if (!trimmed) {
+      toast.error('Please enter an order number or ID.');
       return;
     }
-    toast.success(`Tracking coordinates located for ${orderNumber}.`);
+
+    setLoading(true);
+    setSearched(true);
+    try {
+      const res = await orderApi.getOrderById(trimmed);
+      const order = res?.order || res?.data?.order || res?.data || res;
+      if (order && (order._id || order.id || order.orderNumber)) {
+        setTrackingResult({
+          orderNumber: order.orderNumber || order.id || order._id,
+          carrier: order.courier || 'DHL Express Insured Sovereign Signature',
+          trackingNumber: order.trackingNumber || `TRK-ZRN-${(order._id || order.id || '').slice(-6).toUpperCase()}`,
+          status: order.status || 'In Transit',
+          origin: order.origin || 'European Master Atelier',
+          destination: order.shippingAddress ? `${order.shippingAddress.city || ''}, ${order.shippingAddress.country || ''}` : 'Recipient Destination',
+          estimatedDelivery: order.deliveryEstimate || 'Estimated 2-4 Business Days',
+          items: (order.items || []).map((it) => ({
+            name: it.name || it.product?.name || 'Artisan Creation',
+            qty: it.quantity || 1,
+            price: it.price || it.product?.price || 0,
+          })),
+          timeline: buildTimelineFromOrder(order),
+        });
+        toast.success(`Tracking coordinates located for ${trimmed}.`);
+      } else {
+        setTrackingResult(null);
+        toast.error('No tracking record found for this order reference.');
+      }
+    } catch (err) {
+      setTrackingResult(null);
+      toast.error(err.message || 'Unable to locate tracking telemetry for this reference.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -202,6 +234,16 @@ export const OrderTrackingPage = () => {
               </span>
               <span className="text-[11px] text-text-subtle font-mono">Carrier: DHL Express Private</span>
             </div>
+          </div>
+        )}
+
+        {!trackingResult && !loading && (
+          <div className="bg-surface rounded-3xl border border-border p-10 text-center space-y-3 shadow-subtle">
+            <Package className="w-10 h-10 text-text-muted mx-auto" />
+            <h3 className="font-serif font-bold text-lg text-text-main">Live Telemetry Lookup</h3>
+            <p className="text-xs text-text-muted max-w-md mx-auto">
+              Enter your Zareen order reference number (e.g. ZAR-2026-05C433 or your MongoDB Order ID) to view armored dispatch coordinates, courier checkpoints, and live transit status.
+            </p>
           </div>
         )}
       </div>

@@ -5,46 +5,37 @@ export const fetchAdminDashboard = createAsyncThunk(
   'admin/fetchDashboard',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await adminApi.getDashboard();
-      return response.data?.data || response.data;
+      const response = await adminApi.getAnalyticsOverview();
+      const data = response.data || response;
+      return data.overview || data.analytics || data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load dashboard data');
-    }
-  }
-);
-
-export const fetchAdminUsers = createAsyncThunk(
-  'admin/fetchUsers',
-  async (params, { rejectWithValue }) => {
-    try {
-      const response = await adminApi.getUsers(params);
-      return response.data?.data || response.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load users');
+      return rejectWithValue(err.message || 'Failed to load dashboard data');
     }
   }
 );
 
 export const fetchAdminSellers = createAsyncThunk(
   'admin/fetchSellers',
-  async (params, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await adminApi.getSellers(params);
-      return response.data?.data || response.data;
+      const response = await adminApi.getSellerApplications(params);
+      const data = response.data || response;
+      return data.applications || data.sellers || (Array.isArray(data) ? data : []);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load sellers');
+      return rejectWithValue(err.message || 'Failed to load seller applications');
     }
   }
 );
 
 export const fetchAdminProducts = createAsyncThunk(
   'admin/fetchProducts',
-  async (params, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
       const response = await adminApi.getProducts(params);
-      return response.data?.data || response.data;
+      const data = response.data || response;
+      return data.products || (Array.isArray(data) ? data : []);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load products');
+      return rejectWithValue(err.message || 'Failed to load products');
     }
   }
 );
@@ -54,81 +45,114 @@ export const fetchAdminCategories = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await adminApi.getCategories();
-      return response.data?.data || response.data;
+      const data = response.data || response;
+      return data.categories || (Array.isArray(data) ? data : []);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load categories');
+      return rejectWithValue(err.message || 'Failed to load categories');
+    }
+  }
+);
+
+export const fetchAdminSubcategories = createAsyncThunk(
+  'admin/fetchSubcategories',
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const response = await adminApi.getSubcategories(params);
+      const data = response.data || response;
+      return data.subcategories || (Array.isArray(data) ? data : []);
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to load subcategories');
+    }
+  }
+);
+
+export const fetchAdminBrands = createAsyncThunk(
+  'admin/fetchBrands',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await adminApi.getBrands();
+      const data = response.data || response;
+      return data.brands || (Array.isArray(data) ? data : []);
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to load brands');
     }
   }
 );
 
 export const fetchAdminOrders = createAsyncThunk(
   'admin/fetchOrders',
-  async (params, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
       const response = await adminApi.getOrders(params);
-      return response.data?.data || response.data;
+      const data = response.data || response;
+      return data.orders || (Array.isArray(data) ? data : []);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load orders');
+      return rejectWithValue(err.message || 'Failed to load orders');
     }
   }
 );
 
 export const fetchAdminPayments = createAsyncThunk(
   'admin/fetchPayments',
-  async (params, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
       const response = await adminApi.getPayments(params);
-      return response.data?.data || response.data;
+      const data = response.data || response;
+      return data.payments || (Array.isArray(data) ? data : []);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load payments');
+      return rejectWithValue(err.message || 'Failed to load payments');
+    }
+  }
+);
+
+export const fetchAdminRefunds = createAsyncThunk(
+  'admin/fetchRefunds',
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const response = await adminApi.getRefunds(params);
+      const data = response.data || response;
+      return data.refunds || (Array.isArray(data) ? data : []);
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to load refunds');
     }
   }
 );
 
 export const fetchAdminCommissions = createAsyncThunk(
   'admin/fetchCommissions',
-  async (params, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
       const response = await adminApi.getCommissions(params);
-      return response.data?.data || response.data;
+      const data = response.data || response;
+      return data.commissions || (Array.isArray(data) ? data : []);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load commissions');
+      return rejectWithValue(err.message || 'Failed to load commissions');
     }
   }
 );
 
 export const fetchAdminReviews = createAsyncThunk(
   'admin/fetchReviews',
-  async (params, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
       const response = await adminApi.getReviews(params);
-      return response.data?.data || response.data;
+      const data = response.data || response;
+      return data.reviews || (Array.isArray(data) ? data : []);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load reviews');
+      return rejectWithValue(err.message || 'Failed to load reviews');
     }
   }
 );
 
 export const fetchAdminCoupons = createAsyncThunk(
   'admin/fetchCoupons',
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await adminApi.getCoupons();
-      return response.data?.data || response.data;
+      const response = await adminApi.getCoupons(params);
+      const data = response.data || response;
+      return data.coupons || (Array.isArray(data) ? data : []);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load coupons');
-    }
-  }
-);
-
-export const fetchAdminAuditLogs = createAsyncThunk(
-  'admin/fetchAuditLogs',
-  async (params, { rejectWithValue }) => {
-    try {
-      const response = await adminApi.getAuditLogs(params);
-      return response.data?.data || response.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load audit logs');
+      return rejectWithValue(err.message || 'Failed to load coupons');
     }
   }
 );
@@ -138,9 +162,10 @@ export const fetchAdminSettings = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await adminApi.getSettings();
-      return response.data?.data || response.data;
+      const data = response.data || response;
+      return data.settings || data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load settings');
+      return rejectWithValue(err.message || 'Failed to load settings');
     }
   }
 );

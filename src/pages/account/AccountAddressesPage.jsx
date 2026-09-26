@@ -1,60 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, Plus, Edit2, Trash2, CheckCircle2, ShieldCheck, X, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
+import useAuth from '../../hooks/useAuth';
 import AccountLayout from '../../components/account/AccountLayout';
 import Input from '../../components/forms/Input';
 import Checkbox from '../../components/forms/Checkbox';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import { LUXURY_COUNTRIES } from '../../components/checkout/AddressStep';
-
-const INITIAL_ADDRESSES = [
-  {
-    id: 'addr-1',
-    label: 'Primary Manhattan Residence',
-    fullName: 'Sarah Jenkins',
-    phone: '+1 (555) 019-2834',
-    addressLine1: '740 Park Avenue, Penthouse 14B',
-    addressLine2: 'Upper East Side',
-    city: 'New York',
-    state: 'NY',
-    postalCode: '10021',
-    country: 'United States',
-    isDefault: true,
-  },
-  {
-    id: 'addr-2',
-    label: 'Beverly Hills Villa',
-    fullName: 'Sarah Jenkins',
-    phone: '+1 (555) 839-1120',
-    addressLine1: '102 Rodeo Drive, Villa 4',
-    addressLine2: '',
-    city: 'Beverly Hills',
-    state: 'CA',
-    postalCode: '90210',
-    country: 'United States',
-    isDefault: false,
-  },
-  {
-    id: 'addr-3',
-    label: 'Parisian Atelier Suite',
-    fullName: 'Sarah Jenkins',
-    phone: '+33 1 42 68 55 00',
-    addressLine1: '28 Place Vendôme, Étage 3',
-    addressLine2: '',
-    city: 'Paris',
-    state: 'Île-de-France',
-    postalCode: '75001',
-    country: 'France',
-    isDefault: false,
-  },
-];
+import { LUXURY_COUNTRIES } from '../../data/checkoutConstants';
+import { addressApi } from '../../api/addressApi';
 
 export const AccountAddressesPage = () => {
-  const [addresses, setAddresses] = useState(INITIAL_ADDRESSES);
+  const { user } = useAuth();
+  const [addresses, setAddresses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const loadAddresses = async () => {
+    try {
+      const res = await addressApi.getAddresses();
+      const list = res?.addresses || res?.data?.addresses || (Array.isArray(res) ? res : []);
+      setAddresses(list);
+    } catch (err) {
+      console.error('Failed to load addresses:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchInitial = async () => {
+      try {
+        const res = await addressApi.getAddresses();
+        const list = res?.addresses || res?.data?.addresses || (Array.isArray(res) ? res : []);
+        if (isMounted) setAddresses(list);
+      } catch (err) {
+        console.error('Failed to load addresses:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchInitial();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [formData, setFormData] = useState({
     label: '',
@@ -72,79 +65,86 @@ export const AccountAddressesPage = () => {
   const handleOpenAddModal = () => {
     setEditingAddressId(null);
     setFormData({
-      label: 'New Residence',
-      fullName: 'Sarah Jenkins',
-      phone: '+1 (555) 019-2834',
+      label: 'Primary Residence',
+      fullName: user?.name || '',
+      phone: user?.phone || '',
       addressLine1: '',
       addressLine2: '',
       city: '',
       state: '',
       postalCode: '',
       country: 'United States',
-      isDefault: false,
+      isDefault: addresses.length === 0,
     });
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (addr) => {
-    setEditingAddressId(addr.id);
-    setFormData({ ...addr });
+    setEditingAddressId(addr._id || addr.id);
+    setFormData({
+      label: addr.label || '',
+      fullName: addr.fullName || '',
+      phone: addr.phone || '',
+      addressLine1: addr.addressLine1 || addr.street || '',
+      addressLine2: addr.addressLine2 || '',
+      city: addr.city || '',
+      state: addr.state || '',
+      postalCode: addr.postalCode || addr.zipCode || '',
+      country: addr.country || 'United States',
+      isDefault: Boolean(addr.isDefault),
+    });
     setIsModalOpen(true);
   };
 
-  const handleSetDefault = (id) => {
-    setAddresses((prev) =>
-      prev.map((addr) => ({
-        ...addr,
-        isDefault: addr.id === id,
-      }))
-    );
-    toast.success('Default delivery destination updated.');
-  };
-
-  const handleConfirmDelete = () => {
-    if (!deleteTarget) return;
-    if (addresses.length <= 1) {
-      toast.error('You must keep at least one delivery destination on file.');
-      setDeleteTarget(null);
-      return;
+  const handleSetDefault = async (id) => {
+    try {
+      await addressApi.setDefaultAddress(id);
+      setAddresses((prev) =>
+        prev.map((addr) => ({
+          ...addr,
+          isDefault: (addr._id || addr.id) === id,
+        }))
+      );
+      toast.success('Default delivery destination updated.');
+    } catch (err) {
+      toast.error(err.message || 'Failed to update default address.');
     }
-    setAddresses((prev) => prev.filter((addr) => addr.id !== deleteTarget.id));
-    toast.success(`"${deleteTarget.label || deleteTarget.addressLine1}" removed from registry.`);
-    setDeleteTarget(null);
   };
 
-  const handleSave = (e) => {
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    const targetId = deleteTarget._id || deleteTarget.id;
+    try {
+      await addressApi.deleteAddress(targetId);
+      setAddresses((prev) => prev.filter((addr) => (addr._id || addr.id) !== targetId));
+      toast.success(`"${deleteTarget.label || deleteTarget.addressLine1}" removed from registry.`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to remove address.');
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.fullName || !formData.addressLine1 || !formData.city || !formData.postalCode) {
       toast.error('Please complete all required address fields.');
       return;
     }
 
-    if (editingAddressId) {
-      setAddresses((prev) =>
-        prev.map((addr) =>
-          addr.id === editingAddressId
-            ? { ...formData, id: editingAddressId }
-            : formData.isDefault
-            ? { ...addr, isDefault: false }
-            : addr
-        )
-      );
-      toast.success('Address updated.');
-    } else {
-      const newEntry = {
-        ...formData,
-        id: `addr-${Date.now()}`,
-      };
-      setAddresses((prev) => [
-        ...(formData.isDefault ? prev.map((a) => ({ ...a, isDefault: false })) : prev),
-        newEntry,
-      ]);
-      toast.success('New delivery destination registered.');
+    try {
+      if (editingAddressId) {
+        await addressApi.updateAddress(editingAddressId, formData);
+        toast.success('Address updated.');
+      } else {
+        await addressApi.createAddress(formData);
+        toast.success('New delivery destination registered.');
+      }
+      loadAddresses();
+      setIsModalOpen(false);
+    } catch (err) {
+      toast.error(err.message || 'Failed to save address.');
     }
-
-    setIsModalOpen(false);
   };
 
   return (
@@ -172,89 +172,113 @@ export const AccountAddressesPage = () => {
         </div>
 
         {/* Addresses Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {addresses.map((addr) => (
-            <div
-              key={addr.id}
-              className={`p-6 rounded-2xl border transition-all relative flex flex-col justify-between ${
-                addr.isDefault
-                  ? 'border-primary bg-surface ring-2 ring-primary/10 shadow-subtle'
-                  : 'border-border bg-surface hover:border-border-strong shadow-xs'
-              }`}
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-accent-light text-accent flex items-center justify-center">
-                      <MapPin className="w-4 h-4" />
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[1, 2].map((n) => (
+              <div key={n} className="h-48 bg-surface-muted rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : addresses.length === 0 ? (
+          <div className="bg-surface rounded-2xl border border-border p-10 text-center space-y-3">
+            <MapPin className="w-8 h-8 text-text-muted mx-auto" />
+            <p className="font-serif font-bold text-base text-text-main">No Destinations on File</p>
+            <p className="text-xs text-text-muted max-w-sm mx-auto">
+              Add your delivery address for complimentary white-glove insured courier dispatch.
+            </p>
+            <Button variant="primary" size="sm" onClick={handleOpenAddModal} leftIcon={Plus}>
+              Add Address
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {addresses.map((addr) => {
+              const addrId = addr._id || addr.id;
+              const street = addr.addressLine1 || addr.street || '';
+
+              return (
+                <div
+                  key={addrId}
+                  className={`p-6 rounded-2xl border transition-all relative flex flex-col justify-between ${
+                    addr.isDefault
+                      ? 'border-primary bg-surface ring-2 ring-primary/10 shadow-subtle'
+                      : 'border-border bg-surface hover:border-border-strong shadow-xs'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-accent-light text-accent flex items-center justify-center">
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="font-serif font-bold text-sm text-text-main">
+                            {addr.label || 'Residence'}
+                          </h3>
+                          <span className="text-[11px] text-text-subtle font-medium">
+                            {addr.country}
+                          </span>
+                        </div>
+                      </div>
+
+                      {addr.isDefault && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-accent-light text-accent px-2 py-0.5 rounded-md">
+                          <CheckCircle2 className="w-3 h-3 text-accent" /> Default Destination
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <h3 className="font-serif font-bold text-sm text-text-main">
-                        {addr.label || 'Residence'}
-                      </h3>
-                      <span className="text-[11px] text-text-subtle font-medium">
-                        {addr.country}
-                      </span>
+
+                    <div className="space-y-1 text-xs text-text-muted">
+                      <p className="font-semibold text-text-main">{addr.fullName}</p>
+                      <p>
+                        {street}
+                        {addr.addressLine2 ? `, ${addr.addressLine2}` : ''}
+                      </p>
+                      <p>
+                        {addr.city}, {addr.state} {addr.postalCode || addr.zipCode}
+                      </p>
+                      {addr.phone && <p className="text-text-subtle text-[11px] pt-1">{addr.phone}</p>}
                     </div>
                   </div>
 
-                  {addr.isDefault && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-accent-light text-accent px-2 py-0.5 rounded-md">
-                      <CheckCircle2 className="w-3 h-3 text-accent" /> Default Destination
-                    </span>
-                  )}
-                </div>
+                  {/* Action Buttons */}
+                  <div className="pt-4 mt-4 border-t border-border flex items-center justify-between gap-2">
+                    <div>
+                      {!addr.isDefault && (
+                        <button
+                          type="button"
+                          onClick={() => handleSetDefault(addrId)}
+                          className="text-xs font-semibold text-accent hover:underline cursor-pointer"
+                        >
+                          Make Default
+                        </button>
+                      )}
+                    </div>
 
-                <div className="space-y-1 text-xs text-text-muted">
-                  <p className="font-semibold text-text-main">{addr.fullName}</p>
-                  <p>
-                    {addr.addressLine1}
-                    {addr.addressLine2 ? `, ${addr.addressLine2}` : ''}
-                  </p>
-                  <p>
-                    {addr.city}, {addr.state} {addr.postalCode}
-                  </p>
-                  <p className="text-text-subtle text-[11px] pt-1">{addr.phone}</p>
-                </div>
-              </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(addr)}
+                        className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-surface-muted transition-colors cursor-pointer"
+                        title="Edit address"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
 
-              {/* Action Buttons */}
-              <div className="pt-4 mt-4 border-t border-border flex items-center justify-between gap-2">
-                <div>
-                  {!addr.isDefault && (
-                    <button
-                      type="button"
-                      onClick={() => handleSetDefault(addr.id)}
-                      className="text-xs font-semibold text-accent hover:underline cursor-pointer"
-                    >
-                      Make Default
-                    </button>
-                  )}
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(addr)}
+                        className="p-1.5 rounded-lg text-text-muted hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Delete address"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEditModal(addr)}
-                    className="p-1.5 rounded-lg text-text-muted hover:text-text-main hover:bg-surface-muted transition-colors cursor-pointer"
-                    title="Edit address"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setDeleteTarget(addr)}
-                    className="p-1.5 rounded-lg text-text-muted hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                    title="Delete address"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Add / Edit Address Modal */}

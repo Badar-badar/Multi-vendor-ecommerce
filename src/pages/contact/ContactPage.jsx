@@ -53,17 +53,28 @@ export const ContactPage = () => {
 
   return (
     <div className="min-h-screen bg-background text-text-main pb-24 space-y-16">
-      {/* Header */}
-      <section className="bg-surface py-16 border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-semibold uppercase tracking-widest">
-            <Sparkles className="w-3.5 h-3.5" /> Private Client Concierge
+      {/* Header Banner with High-Resolution Backdrop */}
+      <section className="relative bg-slate-950 text-white py-16 sm:py-24 border-b border-border/80 overflow-hidden">
+        {/* High-Resolution Showroom Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2000&auto=format&fit=crop"
+            alt="Private Client Concierge Salon"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/80 to-slate-950" />
+          <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 relative z-10">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-accent-light text-xs font-semibold uppercase tracking-widest backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 text-accent" /> Private Client Concierge
           </span>
-          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-text-main tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight">
             Dialogue with Our Concierge
           </h1>
-          <p className="text-xs sm:text-sm text-text-muted max-w-xl mx-auto leading-relaxed">
-            Our private advisors assist with bespoke bespoke commissions, sizing consultations, and courier logistics 24/7.
+          <p className="text-xs sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed font-light">
+            Our private advisors assist with bespoke commissions, fine jewelry sizing, and white-glove courier logistics worldwide.
           </p>
         </div>
       </section>

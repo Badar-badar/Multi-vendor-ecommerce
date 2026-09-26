@@ -10,7 +10,8 @@ import { setCurrentOrder } from '../../features/orders/orderSlice';
 
 import CheckoutStepsHeader from '../../components/checkout/CheckoutStepsHeader';
 import AddressStep from '../../components/checkout/AddressStep';
-import ShippingStep, { SHIPPING_METHODS } from '../../components/checkout/ShippingStep';
+import ShippingStep from '../../components/checkout/ShippingStep';
+import { SHIPPING_METHODS } from '../../data/checkoutConstants';
 import ReviewStep from '../../components/checkout/ReviewStep';
 import PaymentStep from '../../components/checkout/PaymentStep';
 import OrderConfirmationView from '../../components/checkout/OrderConfirmationView';
@@ -28,38 +29,13 @@ import {
 } from '../../features/checkout/checkoutSelectors';
 import { refreshIdempotencyKey, clearCheckoutError } from '../../features/checkout/checkoutSlice';
 
-// Mock preset addresses for registered patron
-const INITIAL_SAVED_ADDRESSES = [
-  {
-    id: 'addr-1',
-    fullName: 'Sarah Jenkins',
-    phone: '+1 (555) 019-2834',
-    addressLine1: '740 Park Avenue, Penthouse 14B',
-    addressLine2: 'Upper East Side',
-    city: 'New York',
-    state: 'NY',
-    postalCode: '10021',
-    country: 'United States',
-    isDefault: true,
-  },
-  {
-    id: 'addr-2',
-    fullName: 'Sarah Jenkins',
-    phone: '+1 (555) 839-1120',
-    addressLine1: '102 Rodeo Drive, Villa 4',
-    addressLine2: '',
-    city: 'Beverly Hills',
-    state: 'CA',
-    postalCode: '90210',
-    country: 'United States',
-    isDefault: false,
-  },
-];
+import { fetchAddresses, addAddress } from '../../features/addresses/addressThunk';
 
 export const CheckoutPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useAuth();
+  const reduxAddresses = useSelector((state) => state.addresses?.addresses || []);
 
   const {
     items,
@@ -83,12 +59,11 @@ export const CheckoutPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
 
   // Address State
-  const [savedAddresses, setSavedAddresses] = useState(INITIAL_SAVED_ADDRESSES);
-  const [selectedAddressId, setSelectedAddressId] = useState(INITIAL_SAVED_ADDRESSES[0].id);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
-    fullName: user?.name || 'Sarah Jenkins',
-    phone: '+1 (555) 019-2834',
+    fullName: user?.name || '',
+    phone: '',
     addressLine1: '',
     addressLine2: '',
     city: '',
@@ -97,6 +72,17 @@ export const CheckoutPage = () => {
     country: 'United States',
     isDefault: false,
   });
+
+  useEffect(() => {
+    dispatch(fetchAddresses());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (reduxAddresses.length > 0 && !selectedAddressId) {
+      const defaultAddr = reduxAddresses.find((a) => a.isDefault) || reduxAddresses[0];
+      setSelectedAddressId(defaultAddr._id || defaultAddr.id);
+    }
+  }, [reduxAddresses, selectedAddressId]);
 
   // Shipping State
   const [selectedShippingMethodId, setSelectedShippingMethodId] = useState('standard');
@@ -144,7 +130,7 @@ export const CheckoutPage = () => {
   // Active selected address object
   const activeAddress = isAddingNewAddress
     ? addressForm
-    : savedAddresses.find((a) => a.id === selectedAddressId) || savedAddresses[0] || addressForm;
+    : reduxAddresses.find((a) => (a._id || a.id) === selectedAddressId) || reduxAddresses[0] || addressForm;
 
   // Handle address form updates
   const handleAddressFormChange = (field, value) => {
@@ -152,7 +138,7 @@ export const CheckoutPage = () => {
   };
 
   const handleSelectSavedAddress = (addr) => {
-    setSelectedAddressId(addr.id);
+    setSelectedAddressId(addr._id || addr.id);
     setIsAddingNewAddress(false);
   };
 
@@ -161,12 +147,16 @@ export const CheckoutPage = () => {
   };
 
   // Step transitions
-  const handleProceedToShipping = () => {
+  const handleProceedToShipping = async () => {
     if (isAddingNewAddress) {
-      const newId = `addr-${Date.now()}`;
-      const newEntry = { id: newId, ...addressForm };
-      setSavedAddresses((prev) => [newEntry, ...prev]);
-      setSelectedAddressId(newId);
+      try {
+        const result = await dispatch(addAddress(addressForm)).unwrap();
+        if (result?._id || result?.id) {
+          setSelectedAddressId(result._id || result.id);
+        }
+      } catch (e) {
+        // Continue even if saving to profile fails
+      }
       setIsAddingNewAddress(false);
     }
     setCurrentStep(2);
@@ -328,7 +318,7 @@ export const CheckoutPage = () => {
         <div className="lg:col-span-2">
           {currentStep === 1 && (
             <AddressStep
-              savedAddresses={savedAddresses}
+              savedAddresses={reduxAddresses}
               selectedAddressId={selectedAddressId}
               onSelectSavedAddress={handleSelectSavedAddress}
               addressForm={addressForm}
